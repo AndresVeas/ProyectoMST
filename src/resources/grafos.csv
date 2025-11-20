@@ -1,13 +1,13 @@
 Lista Vertices
 Bahia,Quevedo,Quito,Ambato
-Matriz Adyacencia - 4
+Matriz Adyacencia - 1
 1,2,5
 1,3,7
 1,4,6
 ---------------
 Lista Vertices
 A,B,C,D,E
-Matriz Adyacencia - 5
+Matriz Adyacencia - 2
 1,2,4
 1,3,11
 1,4,9
@@ -16,20 +16,20 @@ Matriz Adyacencia - 5
 3,4,8
 3,5,5
 4,5,10
---------------
+---------------
 Lista Vertices
 Quito,Guayaquil,Cuenca,Machala
-Matriz Adyacencia - 6
+Matriz Adyacencia - 3
 1,2,260
 1,3,190
 2,3,420
-3,4,220
 2,4,480
---------------
-
+3,4,220
+---------------
 Lista Vertices
-1,2,3,4,5,6
-Matriz Adyacencia - 7
+1,2,3,4,5
+6
+Matriz Adyacencia - 4
 1,2,7
 1,3,9
 1,6,14
@@ -39,24 +39,15 @@ Matriz Adyacencia - 7
 3,6,2
 4,5,6
 5,6,9
---------------
-
+---------------
 Lista Vertices
 Lima,Arequipa,Trujillo,Cusco,Chiclayo
-Matriz Adyacencia - 8
+Matriz Adyacencia - 5
 1,2,560
 1,3,340
 1,4,1100
 2,4,900
+2,5,420
 3,5,280
 4,5,760
-2,5,420
---------------
-
-Lista Vertices
-A,B,C
-Matriz Adyacencia - 9
-1,2,5
-1,3,2
-2,3,8
---------------
+---------------
