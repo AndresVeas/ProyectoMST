@@ -1,0 +1,8 @@
+# Ignorar toda la carpeta bin (y su contenido)
+/bin/
+
+# Ignorar cualquier .class en todo el repo (por si acaso)
+*.class
+
+bin/*.class
+bin/**/*.class  
