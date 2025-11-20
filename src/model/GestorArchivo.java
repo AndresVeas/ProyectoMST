@@ -35,8 +35,9 @@ public class GestorArchivo {
         grafos.remove(indice);
     }
     
-    public static void insertarGrafo (String[] listaVertices, int [] [] matrizAd){
-        grafos.add(new Graph("Grafo " + (grafos.size()+1),matrizAd,listaVertices));
+    public static void insertarGrafo (Graph g){
+        grafos.add(new Graph("Grafo " + (grafos.size()+1),g.getMatrizAd(),g.getListaVertices()));
+        guardarCambios();
     } 
 
     public static void guardarCambios (){

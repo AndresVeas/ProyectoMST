@@ -165,7 +165,6 @@ public class AgregarVerticesApp extends JFrame {
                 JOptionPane.showMessageDialog(this, "Por favor, ingrese al menos un nodo válido.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            GestorArchivo.insertarGrafo(vertices, null);
             AgregarAristasApp g = new AgregarAristasApp(vertices);
             g.setLocationRelativeTo(null);
             g.setVisible(true);

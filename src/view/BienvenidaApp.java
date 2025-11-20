@@ -101,6 +101,7 @@ public class BienvenidaApp extends JFrame {
                     GraphInterface g = new GraphInterface();
                     g.setLocationRelativeTo(null);
                     g.setVisible(true);
+                    this.setVisible(false);
         });
 
         

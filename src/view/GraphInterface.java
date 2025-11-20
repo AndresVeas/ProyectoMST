@@ -20,6 +20,15 @@ public class GraphInterface extends JFrame {
     private static final Color GRAPH_BG = new Color(51, 65, 85); // Slate-700 (Fondo oscuro para el grafo)
     private static final Color NODE_COLOR = new Color(148, 163, 184); // Slate-400
 
+    // Estado seleccionable
+    private int selectedGraphIndex = -1;
+    private String selectedAlgorithm = null;
+
+    // Componentes a los que hay que acceder desde varios métodos
+    private GraphCanvas graphCanvas;
+    private final List<JButton> graphButtons = new ArrayList<>();
+    private final List<JButton> navButtons = new ArrayList<>();
+
     public GraphInterface() {
         setTitle("ÁRBOL DE EXPANSIÓN MINIMA (MST)");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -55,8 +64,6 @@ public class GraphInterface extends JFrame {
         sidebar.setPreferredSize(new Dimension(180, 0));
         sidebar.setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        // Borde redondeado visual (Simulado con panel dentro de panel o custom painting, aquí simple)
-        
         var label = new JLabel("Grafos:");
         label.setFont(new Font("SansSerif", Font.BOLD, 16));
         label.setForeground(TEXT_DARK);
@@ -69,9 +76,11 @@ public class GraphInterface extends JFrame {
         gridPanel.setBackground(PANEL_BG);
         gridPanel.setMaximumSize(new Dimension(140, 250));
         
-        int cantidadGrafos = GestorArchivo.getGrafos().size();
+        int cantidadGrafos = Math.max(1, GestorArchivo.getGrafos().size());
         for (int i = 1; i <= cantidadGrafos ; i++) {
-            gridPanel.add(createSquareButton("G" + i));
+            var btn = createSquareButton("G" + i, i - 1);
+            gridPanel.add(btn);
+            graphButtons.add(btn);
         }
 
         sidebar.add(gridPanel);
@@ -86,6 +95,7 @@ public class GraphInterface extends JFrame {
                     AgregarVerticesApp a = new AgregarVerticesApp();
                     a.setLocationRelativeTo(null);
                     a.setVisible(true);
+                    this.dispose();
         });
 
         var addLabel = new JLabel("Agregar grafo");
@@ -106,15 +116,26 @@ public class GraphInterface extends JFrame {
         var navPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         navPanel.setOpaque(false);
         
-        navPanel.add(createNavButton("Kruskal", false));
-        navPanel.add(createNavButton("Prim", true)); // Activo
-        navPanel.add(createNavButton("DFS", false));
-        navPanel.add(createNavButton("Comparar", false));
+        // Crear botones de la barra de navegación y guardarlos para marcar/desmarcar
+        var bKruskal = createNavButton("Kruskal");
+        var bPrim = createNavButton("Prim");
+        var bDFS = createNavButton("DFS");
+        var bComparar = createNavButton("Comparar");
+
+        navButtons.add(bKruskal);
+        navButtons.add(bPrim);
+        navButtons.add(bDFS);
+        navButtons.add(bComparar);
+
+        navPanel.add(bKruskal);
+        navPanel.add(bPrim);
+        navPanel.add(bDFS);
+        navPanel.add(bComparar);
         
         centerPanel.add(navPanel, BorderLayout.NORTH);
 
         // --- Center: Visualización del Grafo ---
-        var graphCanvas = new GraphCanvas();
+        graphCanvas = new GraphCanvas();
         centerPanel.add(graphCanvas, BorderLayout.CENTER);
 
         // --- Bottom: Información ---
@@ -132,7 +153,7 @@ public class GraphInterface extends JFrame {
 
     // --- Componentes Personalizados y Helpers ---
 
-    private JButton createSquareButton(String text) {
+    private JButton createSquareButton(String text, int index) {
         var btn = new JButton(text);
         btn.setFont(new Font("SansSerif", Font.PLAIN, 14));
         btn.setForeground(TEXT_GRAY);
@@ -140,15 +161,17 @@ public class GraphInterface extends JFrame {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> selectGraph(index));
         return btn;
     }
 
-    private JButton createNavButton(String text, boolean isActive) {
+    private JButton createNavButton(String text) {
         var btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                boolean isActive = text.equals(selectedAlgorithm);
                 if (getModel().isRollover()) {
                     g2.setColor(isActive ? PRIMARY_BLUE.darker() : Color.WHITE);
                 } else {
@@ -160,12 +183,13 @@ public class GraphInterface extends JFrame {
             }
         };
         btn.setFont(new Font("SansSerif", Font.BOLD, 13));
-        btn.setForeground(isActive ? Color.WHITE : TEXT_DARK);
+        btn.setForeground(TEXT_DARK);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setPreferredSize(new Dimension(100, 35));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> selectAlgorithm(text));
         return btn;
     }
 
@@ -215,62 +239,181 @@ public class GraphInterface extends JFrame {
         }
     }
 
+    // Selecciona un grafo de la barra lateral
+    private void selectGraph(int index) {
+        selectedGraphIndex = index;
+        // Actualizar estilo de botones de grafos
+        for (int i = 0; i < graphButtons.size(); i++) {
+            JButton b = graphButtons.get(i);
+            if (i == index) {
+                b.setBackground(PRIMARY_BLUE);
+                b.setForeground(Color.WHITE);
+            } else {
+                b.setBackground(new Color(241, 245, 249));
+                b.setForeground(TEXT_GRAY);
+            }
+        }
+        // Decidir qué grafo mostrar en el canvas
+        graphCanvas.setGraphIndex(index);
+        graphCanvas.repaint();
+    }
+
+    // Selecciona algoritmo en la barra superior (permanece marcado)
+    private void selectAlgorithm(String name) {
+        selectedAlgorithm = name;
+        for (JButton b : navButtons) {
+            if (b.getText().equals(name)) {
+                b.setForeground(Color.WHITE);
+            } else {
+                b.setForeground(TEXT_DARK);
+            }
+        }
+        // Si necesitas que la selección del algoritmo cambie la visualización,
+        // aquí puedes notificar al graphCanvas para que dibuje resultados del algoritmo.
+        repaint();
+    }
+
     // Clase interna para dibujar el Grafo
     class GraphCanvas extends JPanel {
-        // Nodos "Dummy" para el ejemplo visual
         record Node(String id, int x, int y) {}
-        record Edge(Node n1, Node n2) {}
+        record Edge(Node n1, Node n2, int w) {}
 
         private final List<Node> nodes = new ArrayList<>();
         private final List<Edge> edges = new ArrayList<>();
+        private int currentGraphIndex = -1;
 
         public GraphCanvas() {
             setBackground(GRAPH_BG);
-            // Crear datos de ejemplo similares a la imagen
-            var nA = new Node("A", 300, 250);
-            var nB = new Node("B", 500, 300);
-            var nE = new Node("E", 650, 200);
-            
-            // Nodos extra para simular las líneas que bajan
-            var nAd = new Node("", 300, 400);
-            var nBd = new Node("", 500, 450);
-            var nEd = new Node("", 650, 400);
+        }
 
-            nodes.add(nA);
-            nodes.add(nB);
-            nodes.add(nE);
+        public void setGraphIndex(int idx) {
+            currentGraphIndex = idx;
+            rebuildGraphForIndex(idx);
+        }
 
-            edges.add(new Edge(nA, nB));
-            edges.add(new Edge(nB, nE));
-            // Líneas verticales decorativas (estilo proyección)
-            edges.add(new Edge(nA, nAd));
-            edges.add(new Edge(nB, nBd));
-            edges.add(new Edge(nE, nEd));
+        private void rebuildGraphForIndex(int idx) {
+            nodes.clear();
+            edges.clear();
+
+            var grafos = GestorArchivo.getGrafos();
+            if (grafos == null || idx < 0 || idx >= grafos.size()) {
+                currentGraphIndex = -1;
+                return;
+            }
+
+            model.Graph g = grafos.get(idx);
+            if (g == null) {
+                currentGraphIndex = -1;
+                return;
+            }
+
+            String[] labels = g.getListaVertices();
+            int[][] mat = g.getMatrizAd();
+            if (labels == null || mat == null) {
+                currentGraphIndex = -1;
+                return;
+            }
+
+            int n = labels.length;
+            // Coordenadas basadas en la zona disponible (si aún no tiene tamaño, usar valores por defecto)
+            int w = Math.max(1, getWidth());
+            int h = Math.max(1, getHeight());
+            int cx = w / 2;
+            int cy = h / 2;
+            int radius = (int) (Math.min(w, h) * 0.35);
+            if (radius < 80) radius = 80;
+
+            // Crear nodos en círculo
+            for (int i = 0; i < n; i++) {
+                double angle = 2 * Math.PI * i / Math.max(1, n);
+                int x = cx + (int) (radius * Math.cos(angle));
+                int y = cy + (int) (radius * Math.sin(angle));
+                String id = labels[i] == null ? String.valueOf(i + 1) : labels[i];
+                nodes.add(new Node(id, x, y));
+            }
+
+            // Crear aristas a partir de la matriz de adyacencia (considera grafo no dirigido)
+            for (int i = 0; i < n; i++) {
+                for (int j = i + 1; j < n; j++) {
+                    int peso = 0;
+                    if (i < mat.length && j < mat[i].length) peso = mat[i][j];
+                    if (peso > 0) {
+                        edges.add(new Edge(nodes.get(i), nodes.get(j), peso));
+                    }
+                }
+            }
+
+            currentGraphIndex = idx;
         }
 
         @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g;
+        protected void paintComponent(Graphics g0) {
+            super.paintComponent(g0);
+            Graphics2D g2 = (Graphics2D) g0;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            // Dibujar Aristas
-            g2.setStroke(new BasicStroke(2));
-            g2.setColor(new Color(255, 255, 255, 100)); // Blanco semi-transparente
-            for (var edge : edges) {
-                g2.drawLine(edge.n1.x, edge.n1.y, edge.n2.x, edge.n2.y);
+            if (currentGraphIndex < 0 || nodes.isEmpty()) {
+                g2.setColor(new Color(255, 255, 255, 120));
+                g2.setFont(new Font("SansSerif", Font.BOLD, 20));
+                String msg = "Seleccione un grafo en la barra izquierda";
+                FontMetrics fm = g2.getFontMetrics();
+                int tx = (getWidth() - fm.stringWidth(msg)) / 2;
+                int ty = getHeight() / 2;
+                g2.drawString(msg, tx, ty);
+                return;
             }
 
-            // Dibujar Nodos
+            // Dibujar aristas
+            g2.setStroke(new BasicStroke(2));
+            g2.setColor(new Color(255, 255, 255, 160));
+            for (var edge : edges) {
+                int x1 = edge.n1.x;
+                int y1 = edge.n1.y;
+                int x2 = edge.n2.x;
+                int y2 = edge.n2.y;
+                g2.drawLine(x1, y1, x2, y2);
+            }
+
+            // Etiquetas de peso
+            g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            for (var edge : edges) {
+                int x1 = edge.n1.x;
+                int y1 = edge.n1.y;
+                int x2 = edge.n2.x;
+                int y2 = edge.n2.y;
+                String wstr = String.valueOf(edge.w);
+
+                double mx = (x1 + x2) / 2.0;
+                double my = (y1 + y2) / 2.0;
+
+                double dx = x2 - x1;
+                double dy = y2 - y1;
+                double len = Math.max(1.0, Math.hypot(dx, dy));
+                double nx = -dy / len;
+                double ny = dx / len;
+                double offset = 12;
+                double tx = mx + nx * offset;
+                double ty = my + ny * offset;
+
+                FontMetrics fm = g2.getFontMetrics();
+                int sw = fm.stringWidth(wstr);
+                int sh = fm.getHeight();
+                int pad = 6;
+                g2.setColor(new Color(255, 255, 255, 220));
+                g2.fillRoundRect((int)(tx - sw/2.0) - pad/2, (int)(ty - sh/2.0) - pad/2, sw + pad, sh + pad/2, 8, 8);
+                g2.setColor(TEXT_DARK);
+                g2.drawString(wstr, (int)(tx - sw/2.0), (int)(ty + fm.getAscent()/2.0) - 2);
+            }
+
+            // Dibujar nodos
             for (var node : nodes) {
-                if (node.id.isEmpty()) continue; // Ignorar nodos invisibles de proyección
-                int r = 40; // Radio
-                int x = node.x - r/2;
-                int y = node.y - r/2;
+                int r = 40;
+                int x = node.x - r / 2;
+                int y = node.y - r / 2;
 
                 g2.setColor(NODE_COLOR);
                 g2.fillOval(x, y, r, r);
-                
+
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("SansSerif", Font.BOLD, 14));
                 FontMetrics fm = g2.getFontMetrics();

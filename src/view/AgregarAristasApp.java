@@ -4,6 +4,9 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
 
+import model.GestorArchivo;
+import model.Graph;
+
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -43,8 +46,6 @@ public class AgregarAristasApp extends JFrame {
     // Constructor
     public AgregarAristasApp(String [] listadoVertices) {
         this.listadoVertices = listadoVertices;
-
-        System.out.println(listadoVertices);
         setTitle("Agregar Aristas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // 1. Modificación de tamaño solicitado
@@ -172,9 +173,78 @@ public class AgregarAristasApp extends JFrame {
         GraphButton btnVerGrafo = new GraphButton("Ver Grafo");
         btnVerGrafo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
         btnVerGrafo.addActionListener(e -> {
-            // AQUÍ RECOGERÍAS LOS DATOS DE LOS CAMPOS
-            JOptionPane.showMessageDialog(this, "Procesando aristas y generando grafo...");
-        });
+            // Recolectar los valores (origen,destino,peso) de cada fila
+            java.util.List<String> filas = new java.util.ArrayList<>();
+            Component[] rows = edgesContainer.getComponents();
+            for (Component comp : rows) {
+                if (!(comp instanceof JPanel)) continue;
+                JPanel row = (JPanel) comp;
+                if (row.getComponentCount() <= 1 || !(row.getComponent(1) instanceof JPanel)) continue;
+                JPanel fieldsPanel = (JPanel) row.getComponent(1);
+
+                String origen = "";
+                String destino = "";
+                String peso = "";
+                int found = 0;
+                for (Component c : fieldsPanel.getComponents()) {
+                    if (c instanceof RoundedNumberField) {
+                        RoundedNumberField f = (RoundedNumberField) c;
+                        String txt = f.isShowingPlaceholder() ? "" : f.getText().trim();
+                        if (found == 0) origen = txt;
+                        else if (found == 1) destino = txt;
+                        else if (found == 2) peso = txt;
+                        found++;
+                        if (found >= 3) break;
+                    }
+                }
+                // Solo aceptar filas con los 3 valores válidos (no vacíos)
+                if (!origen.isEmpty() && !destino.isEmpty() && !peso.isEmpty()) {
+                    filas.add(origen + "," + destino + "," + peso);
+                }
+            }
+
+            // Inicializar grafo con la lista de vértices recibida
+            if (listadoVertices == null || listadoVertices.length == 0) {
+                JOptionPane.showMessageDialog(this, "No hay vértices registrados. Vuelva a la pantalla anterior.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Graph graph = new Graph();
+            graph.setListaVertices(listadoVertices);
+            int n = graph.getNumNodos();
+            graph.setMatrizAd(new int[n][n]);
+
+            // Añadir aristas validando índices (se asume IDs numéricos 1..n)
+            for (String fstr : filas) {
+                String[] parts = fstr.split(",");
+                if (parts.length < 3) continue;
+                try {
+                    int s = Integer.parseInt(parts[0].trim());
+                    int t = Integer.parseInt(parts[1].trim());
+                    int w = Integer.parseInt(parts[2].trim());
+                    if (s < 1 || s > n || t < 1 || t > n) {
+                        System.err.println("Índice de vértice fuera de rango: " + fstr);
+                        continue;
+                    }
+                    graph.addEdge(s, t, w);
+                } catch (NumberFormatException ex) {
+                    System.err.println("Valor no numérico en arista: " + fstr);
+                }
+            }
+
+            if (filas.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No hay aristas válidas.", "Info", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, String.join("\n", filas), "Aristas recolectadas", JOptionPane.INFORMATION_MESSAGE);
+            }
+            GestorArchivo.insertarGrafo(graph);
+
+            // Volver a la ventana principal
+            GraphInterface principal = new GraphInterface();
+            principal.setLocationRelativeTo(null);
+            principal.setVisible(true);
+            this.setVisible(false);
+            this.dispose();
+         });
 
         footerPanel.add(btnVerGrafo);
         formCardPanel.add(footerPanel, BorderLayout.SOUTH);
