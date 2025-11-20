@@ -1,6 +1,9 @@
 package view;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+
+import model.GestorArchivo;
+
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -139,11 +142,35 @@ public class AgregarVerticesApp extends JFrame {
         btnNext.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
         
         btnNext.addActionListener(e -> {
-                    AgregarAristasApp g = new AgregarAristasApp();
-                    g.setLocationRelativeTo(null);
-                    g.setVisible(true);
-                    this.setVisible(false);
-        });
+            // Recolectar valores válidos (se ignoran placeholders "Nombre del nodo" y cadenas vacías)
+            java.util.List<String> lista = new java.util.ArrayList<>();
+            Component[] rows = verticesContainer.getComponents();
+            for (Component comp : rows) {
+                if (comp instanceof JPanel) {
+                    JPanel row = (JPanel) comp;
+                    if (row.getComponentCount() > 1 && row.getComponent(1) instanceof JTextField) {
+                        String txt = ((JTextField) row.getComponent(1)).getText();
+                        if (txt != null) {
+                            String val = txt.trim();
+                            if (!val.isEmpty() && !val.equalsIgnoreCase("Nombre del nodo")) {
+                                lista.add(val);
+                            }
+                        }
+                    }
+                }
+            }
+
+            String[] vertices = lista.toArray(new String[0]);
+            if (vertices.length < 1) {
+                JOptionPane.showMessageDialog(this, "Por favor, ingrese al menos un nodo válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            GestorArchivo.insertarGrafo(vertices, null);
+            AgregarAristasApp g = new AgregarAristasApp(vertices);
+            g.setLocationRelativeTo(null);
+            g.setVisible(true);
+            this.setVisible(false);
+         });
 
         footerPanel.add(btnNext);
         cardPanel.add(footerPanel, BorderLayout.SOUTH);
