@@ -2,8 +2,6 @@ package view;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import model.GestorArchivo;
-
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
