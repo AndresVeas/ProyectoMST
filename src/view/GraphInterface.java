@@ -45,6 +45,7 @@ public class GraphInterface extends JFrame {
     // Labels para información dinámica
     private JTextArea pathTextArea;
     private JLabel timeValueLabel;
+    private JLabel weightValueLabel; // nuevo: peso total
 
     public GraphInterface() {
         setTitle("ÁRBOL DE EXPANSIÓN MINIMA (MST)");
@@ -168,6 +169,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.clearHighlights();
             pathTextArea.setText("N/A");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             refreshGraphButtons();
             graphCanvas.repaint();
         });
@@ -245,11 +247,12 @@ public class GraphInterface extends JFrame {
         centerPanel.add(graphCanvas, BorderLayout.CENTER);
 
         // --- Bottom: Información ---
-        var infoPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        var infoPanel = new JPanel(new GridLayout(1, 3, 20, 0)); // ahora 3 columnas: Camino | Peso total | Tiempo
         infoPanel.setOpaque(false);
-        infoPanel.setPreferredSize(new Dimension(0, 100));
+        infoPanel.setPreferredSize(new Dimension(0, 80)); // tamaño reducido
 
         infoPanel.add(createPathInfoBox("Camino mínimo", "N/A"));
+        infoPanel.add(createWeightInfoBox("Peso total del recorrido", "0"));
         infoPanel.add(createTimeInfoBox("Tiempo de ejecución", "0 ns"));
 
         centerPanel.add(infoPanel, BorderLayout.SOUTH);
@@ -336,20 +339,41 @@ public class GraphInterface extends JFrame {
         return panel;
     }
 
-    private JPanel createTimeInfoBox(String title, String value) {
+    private JPanel createWeightInfoBox(String title, String value) {
         var panel = new JPanel(new GridLayout(2, 1));
         panel.setBackground(PANEL_BG);
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(226, 232, 240), 1), // Borde sutil
-            new EmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+            new EmptyBorder(12, 12, 12, 12)
         ));
 
         var titleLbl = new JLabel(title, SwingConstants.CENTER);
         titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
         titleLbl.setForeground(TEXT_GRAY);
 
+        weightValueLabel = new JLabel(value, SwingConstants.CENTER);
+        weightValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+        weightValueLabel.setForeground(TEXT_DARK);
+
+        panel.add(titleLbl);
+        panel.add(weightValueLabel);
+        return panel;
+    }
+
+    private JPanel createTimeInfoBox(String title, String value) {
+        var panel = new JPanel(new GridLayout(2, 1));
+        panel.setBackground(PANEL_BG);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(226, 232, 240), 1), // Borde sutil
+            new EmptyBorder(10, 10, 10, 10)
+        ));
+
+        var titleLbl = new JLabel(title, SwingConstants.CENTER);
+        titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 11));
+        titleLbl.setForeground(TEXT_GRAY);
+
         timeValueLabel = new JLabel(value, SwingConstants.CENTER);
-        timeValueLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+        timeValueLabel.setFont(new Font("SansSerif", Font.BOLD, 13)); // tamaño reducido
         timeValueLabel.setForeground(TEXT_DARK);
 
         panel.add(titleLbl);
@@ -438,6 +462,7 @@ public class GraphInterface extends JFrame {
             // limpiar info si deseleccionan grafo
             pathTextArea.setText(index >= 0 ? "N/A" : "Seleccione un grafo");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
         }
     }
@@ -467,6 +492,7 @@ public class GraphInterface extends JFrame {
             // limpiar resaltados e info al deseleccionar algoritmo
             pathTextArea.setText("N/A");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
             graphCanvas.repaint();
         }
@@ -477,6 +503,7 @@ public class GraphInterface extends JFrame {
         if (selectedGraphIndex < 0) {
             pathTextArea.setText("Seleccione un grafo");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
             graphCanvas.repaint();
             return;
@@ -486,6 +513,7 @@ public class GraphInterface extends JFrame {
         if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
             pathTextArea.setText("Grafo inválido");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
             graphCanvas.repaint();
             return;
@@ -495,6 +523,7 @@ public class GraphInterface extends JFrame {
         if (g == null) {
             pathTextArea.setText("Grafo vacío");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
             graphCanvas.repaint();
             return;
@@ -511,6 +540,7 @@ public class GraphInterface extends JFrame {
             // otros métodos (DFS, Comparar) no están implementados en Methods; limpiar
             pathTextArea.setText("Método no implementado");
             timeValueLabel.setText("0 ns");
+            weightValueLabel.setText("0");
             graphCanvas.clearHighlights();
             graphCanvas.repaint();
             return;
@@ -521,12 +551,15 @@ public class GraphInterface extends JFrame {
         String[] labels = g.getListaVertices();
         if (result == null || result.isEmpty()) {
             pathTextArea.setText("Sin aristas en resultado");
+            weightValueLabel.setText("0");
         } else {
             // construir partes (por arista) usando labels
             List<String> parts = new ArrayList<>();
+            int totalWeight = 0;
             for (model.Edge e : result) {
                 int u = e.getU();
                 int v = e.getV();
+                totalWeight += e.getWeight();
                 String lu = (labels != null && u >= 0 && u < labels.length && labels[u] != null) ? labels[u] : String.valueOf(u);
                 String lv = (labels != null && v >= 0 && v < labels.length && labels[v] != null) ? labels[v] : String.valueOf(v);
                 parts.add("(" + lu + " - " + lv + ": " + e.getWeight() + ")");
@@ -554,6 +587,7 @@ public class GraphInterface extends JFrame {
 
             pathTextArea.setText(text.toString());
             pathTextArea.setCaretPosition(0);
+            weightValueLabel.setText(String.valueOf(totalWeight));
         }
         timeValueLabel.setText(elapsedNs + " ns");
 
@@ -637,6 +671,7 @@ public class GraphInterface extends JFrame {
         leftText.setWrapStyleWord(true);
         leftText.setFont(new Font("SansSerif", Font.PLAIN, 13));
         leftText.setBackground(PANEL_BG);
+        int totalLeft = 0;
         if (!impl1) {
             leftText.setText(m1 + " no implementado");
         } else if (res1 == null || res1.isEmpty()) {
@@ -646,6 +681,7 @@ public class GraphInterface extends JFrame {
             for (int i = 0; i < res1.size(); i++) {
                 model.Edge e = res1.get(i);
                 int u = e.getU(), v = e.getV();
+                totalLeft += e.getWeight();
                 String lu = (labels != null && u >= 0 && u < labels.length && labels[u] != null) ? labels[u] : String.valueOf(u);
                 String lv = (labels != null && v >= 0 && v < labels.length && labels[v] != null) ? labels[v] : String.valueOf(v);
                 sb.append("(").append(lu).append(" - ").append(lv).append(": ").append(e.getWeight()).append(")");
@@ -653,7 +689,7 @@ public class GraphInterface extends JFrame {
             }
             leftText.setText(sb.toString());
         }
-        JLabel leftTime = new JLabel(impl1 && t1 >= 0 ? (t1 + " ns") : "N/A", SwingConstants.CENTER);
+        JLabel leftTime = new JLabel(impl1 && t1 >= 0 ? (t1 + " ns — Peso: " + totalLeft) : "N/A", SwingConstants.CENTER);
         leftTime.setFont(new Font("SansSerif", Font.BOLD, 14));
         leftInfo.add(new JLabel(m1, SwingConstants.CENTER), BorderLayout.NORTH);
         leftInfo.add(new JScrollPane(leftText, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
@@ -668,6 +704,7 @@ public class GraphInterface extends JFrame {
         rightText.setWrapStyleWord(true);
         rightText.setFont(new Font("SansSerif", Font.PLAIN, 13));
         rightText.setBackground(PANEL_BG);
+        int totalRight = 0;
         if (!impl2) {
             rightText.setText(m2 + " no implementado");
         } else if (res2 == null || res2.isEmpty()) {
@@ -677,6 +714,7 @@ public class GraphInterface extends JFrame {
             for (int i = 0; i < res2.size(); i++) {
                 model.Edge e = res2.get(i);
                 int u = e.getU(), v = e.getV();
+                totalRight += e.getWeight();
                 String lu = (labels != null && u >= 0 && u < labels.length && labels[u] != null) ? labels[u] : String.valueOf(u);
                 String lv = (labels != null && v >= 0 && v < labels.length && labels[v] != null) ? labels[v] : String.valueOf(v);
                 sb2.append("(").append(lu).append(" - ").append(lv).append(": ").append(e.getWeight()).append(")");
@@ -684,7 +722,7 @@ public class GraphInterface extends JFrame {
             }
             rightText.setText(sb2.toString());
         }
-        JLabel rightTime = new JLabel(impl2 && t2 >= 0 ? (t2 + " ns") : "N/A", SwingConstants.CENTER);
+        JLabel rightTime = new JLabel(impl2 && t2 >= 0 ? (t2 + " ns — Peso: " + totalRight) : "N/A", SwingConstants.CENTER);
         rightTime.setFont(new Font("SansSerif", Font.BOLD, 14));
         rightInfo.add(new JLabel(m2, SwingConstants.CENTER), BorderLayout.NORTH);
         rightInfo.add(new JScrollPane(rightText, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
@@ -759,7 +797,7 @@ public class GraphInterface extends JFrame {
         private final List<Edge> edges = new ArrayList<>();
         private int currentGraphIndex = -1;
 
-        // conjuntos de resaltado (pares normalizados "min-max")
+        // conjuntos de resaltado (usar clave "u->v")
         private final Set<String> highlightedEdgeKeys = new HashSet<>();
         private final Set<Integer> highlightedNodeIdx = new HashSet<>();
 
@@ -779,9 +817,9 @@ public class GraphInterface extends JFrame {
             for (model.Edge me : modelEdges) {
                 int u = me.getU();
                 int v = me.getV();
-                int a = Math.min(u, v);
-                int b = Math.max(u, v);
-                highlightedEdgeKeys.add(a + "-" + b);
+                // agregar ambas direcciones para que el resaltado funcione aunque el grafo visual sea dirigido
+                highlightedEdgeKeys.add(u + "->" + v);
+                highlightedEdgeKeys.add(v + "->" + u);
                 highlightedNodeIdx.add(u);
                 highlightedNodeIdx.add(v);
             }
@@ -833,9 +871,10 @@ public class GraphInterface extends JFrame {
                 nodes.add(new Node(id, x, y));
             }
 
-            // Crear aristas a partir de la matriz de adyacencia (considera grafo no dirigido)
+            // Crear aristas a partir de la matriz de adyacencia (ahora dirigido: mat[i][j] representa i->j)
             for (int i = 0; i < n; i++) {
-                for (int j = i + 1; j < n; j++) {
+                for (int j = 0; j < n; j++) {
+                    if (i == j) continue;
                     int peso = 0;
                     if (i < mat.length && j < mat[i].length) peso = mat[i][j];
                     if (peso > 0) {
@@ -864,18 +903,45 @@ public class GraphInterface extends JFrame {
                 return;
             }
 
-            // Dibujar aristas
+            // Dibujar aristas (con flechas al final indicando dirección)
+            int nodeDiameter = 40;
             for (var edge : edges) {
                 int x1 = edge.n1.x;
                 int y1 = edge.n1.y;
                 int x2 = edge.n2.x;
                 int y2 = edge.n2.y;
-                String key = Math.min(edge.i, edge.j) + "-" + Math.max(edge.i, edge.j);
+                String key = edge.i + "->" + edge.j;
                 boolean isHighlighted = highlightedEdgeKeys.contains(key);
 
                 g2.setStroke(new BasicStroke(isHighlighted ? 4f : 2f));
                 g2.setColor(isHighlighted ? Color.ORANGE : new Color(255, 255, 255, 160));
-                g2.drawLine(x1, y1, x2, y2);
+
+                // ajustar líneas para que no entren al centro de los nodos (iniciar/terminar en el borde del círculo)
+                double angle = Math.atan2(y2 - y1, x2 - x1);
+                double sx = x1 + Math.cos(angle) * (nodeDiameter / 2.0);
+                double sy = y1 + Math.sin(angle) * (nodeDiameter / 2.0);
+                double ex = x2 - Math.cos(angle) * (nodeDiameter / 2.0);
+                double ey = y2 - Math.sin(angle) * (nodeDiameter / 2.0);
+
+                g2.drawLine((int) sx, (int) sy, (int) ex, (int) ey);
+
+                // Dibujar flecha en (ex,ey) apuntando hacia (x2,y2)
+                double arrowLen = 12;
+                double arrowWid = 8;
+                double vx = Math.cos(angle);
+                double vy = Math.sin(angle);
+                double ox = -vy;
+                double oy = vx;
+                double ax = ex;
+                double ay = ey;
+                double x2p = ax - vx * arrowLen + ox * (arrowWid / 2.0);
+                double y2p = ay - vy * arrowLen + oy * (arrowWid / 2.0);
+                double x3p = ax - vx * arrowLen - ox * (arrowWid / 2.0);
+                double y3p = ay - vy * arrowLen - oy * (arrowWid / 2.0);
+
+                int[] xs = {(int) Math.round(ax), (int) Math.round(x2p), (int) Math.round(x3p)};
+                int[] ys = {(int) Math.round(ay), (int) Math.round(y2p), (int) Math.round(y3p)};
+                g2.fillPolygon(xs, ys, 3);
             }
 
             // Etiquetas de peso
@@ -912,7 +978,7 @@ public class GraphInterface extends JFrame {
             // Dibujar nodos
             for (int idx = 0; idx < nodes.size(); idx++) {
                 var node = nodes.get(idx);
-                int r = 40;
+                int r = nodeDiameter;
                 int x = node.x - r / 2;
                 int y = node.y - r / 2;
 
