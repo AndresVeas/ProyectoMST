@@ -5,13 +5,17 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
-import model.GestorArchivo;
-import model.Graph;
+
+
+import controller.GestorArchivoController;
+import controller.GraphController;
 
 public class AgregarAristasApp extends JFrame {
 
@@ -45,11 +49,22 @@ public class AgregarAristasApp extends JFrame {
     public AgregarAristasApp(String [] listadoVertices) {
         this.listadoVertices = listadoVertices;
         setTitle("Agregar Aristas");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // No salir de la app al cerrar; manejamos la X para volver a GraphInterface
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         // 1. Modificación de tamaño solicitado
         setSize(1000, 700);
         setLocationRelativeTo(null);
 
+        // Al cerrar, volver a GraphInterface
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                GraphInterface gi = new GraphInterface();
+                gi.setLocationRelativeTo(null);
+                gi.setVisible(true);
+                dispose();
+            }
+        });
         // Panel Principal con BorderLayout para dividir Izquierda/Centro
         JPanel mainPanel = new JPanel(new BorderLayout(20, 0)); // Separación horizontal de 20px
         mainPanel.setBorder(new EmptyBorder(30, 30, 30, 30));
@@ -288,11 +303,8 @@ public class AgregarAristasApp extends JFrame {
                 return; // no avanzar hasta corregir
             }
 
-            // Construir el grafo con las filas ya validadas
-            Graph graph = new Graph();
-            graph.setListaVertices(listadoVertices);
-            graph.setMatrizAd(new int[n][n]);
-
+            // Construir el grafo con las filas ya validadas (usando controlador)
+            var graph = GraphController.crearGrafo(listadoVertices);
             for (String fstr : filas) {
                 String[] parts = fstr.split(",");
                 if (parts.length < 3) continue;
@@ -300,22 +312,23 @@ public class AgregarAristasApp extends JFrame {
                     int s = Integer.parseInt(parts[0].trim());
                     int t = Integer.parseInt(parts[1].trim());
                     int w = Integer.parseInt(parts[2].trim());
-                    graph.addEdge(s, t, w);
+                    // usar el método del controlador para agregar aristas
+                    GraphController.agregarArista(graph, s, t, w);
                 } catch (NumberFormatException ex) {
                     // no debería ocurrir porque ya validamos
                 }
             }
-
-            // Insertar y guardar
-            GestorArchivo.insertarGrafo(graph);
-            try { GestorArchivo.guardarCambios(); } catch (Exception ex) { System.err.println("Error guardando cambios: " + ex.getMessage()); }
-
-            // volver a la ventana principal
-            GraphInterface principal = new GraphInterface();
-            principal.setLocationRelativeTo(null);
-            principal.setVisible(true);
-            this.setVisible(false);
-            this.dispose();
+ 
+            // Insertar y guardar (vía controlador)
+            GestorArchivoController.insertarGrafo(graph);
+            try { GestorArchivoController.guardarCambios(); } catch (Exception ex) { System.err.println("Error guardando cambios: " + ex.getMessage()); }
+ 
+             // volver a la ventana principal
+             GraphInterface principal = new GraphInterface();
+             principal.setLocationRelativeTo(null);
+             principal.setVisible(true);
+             this.setVisible(false);
+             this.dispose();
          });
 
         footerPanel.add(btnVerGrafo);

@@ -8,6 +8,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -36,10 +38,21 @@ public class AgregarVerticesApp extends JFrame {
 
     public AgregarVerticesApp() {
         setTitle("Agregar Vértices");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Evitar cerrar toda la app; interceptamos la X
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(500, 650);
         setLocationRelativeTo(null);
 
+        // Abrir GraphInterface cuando se pulsa la X
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                GraphInterface gi = new GraphInterface();
+                gi.setLocationRelativeTo(null);
+                gi.setVisible(true);
+                dispose();
+            }
+        });
         // Panel Principal (Fondo)
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBackground(COLOR_FONDO_APP);

@@ -9,8 +9,10 @@ import java.util.List;
 import java.util.Set;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import model.GestorArchivo;
-import model.Methods;
+
+
+import controller.GestorArchivoController;
+import controller.MethotdsController;
 
 public class GraphInterface extends JFrame {
     
@@ -54,12 +56,12 @@ public class GraphInterface extends JFrame {
         setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
         
-        // Al cerrar ventana, guardar cambios antes de salir
+        // Al cerrar ventana, guardar cambios antes de salir (usando controlador)
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 try {
-                    GestorArchivo.guardarCambios();
+                    GestorArchivoController.guardarCambios();
                 } catch (Exception ex) {
                     // no detener cierre por error de guardado
                 }
@@ -154,13 +156,13 @@ public class GraphInterface extends JFrame {
             int opt = JOptionPane.showConfirmDialog(this, "Seguro que desea eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (opt != JOptionPane.YES_OPTION) return;
             
-            var grafos = GestorArchivo.getGrafos();
+            var grafos = GestorArchivoController.obtenerGrafos();
             if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
                 JOptionPane.showMessageDialog(this, "Grafo inválido", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             model.Graph toRemove = grafos.get(selectedGraphIndex);
-            GestorArchivo.eliminarGrafo(toRemove);
+            GestorArchivoController.eliminarGrafo(toRemove);
             // limpiar selección y actualizar UI
             selectedGraphIndex = -1;
             graphCanvas.setGraphIndex(-1);
@@ -188,7 +190,7 @@ public class GraphInterface extends JFrame {
     private void refreshGraphButtons() {
         graphGridPanel.removeAll();
         graphButtons.clear();
-        var grafos = GestorArchivo.getGrafos();
+        var grafos = GestorArchivoController.obtenerGrafos();
         int cantidadGrafos = grafos == null ? 0 : grafos.size();
         cantidadGrafos = Math.max(1, cantidadGrafos);
         for (int i = 1; i <= cantidadGrafos; i++) {
@@ -507,7 +509,7 @@ public class GraphInterface extends JFrame {
             return;
         }
         
-        var grafos = GestorArchivo.getGrafos();
+        var grafos = GestorArchivoController.obtenerGrafos();
         if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
             pathTextArea.setText("Grafo inválido");
             timeValueLabel.setText("0 ns");
@@ -527,16 +529,15 @@ public class GraphInterface extends JFrame {
             return;
         }
         
-        Methods methods = new Methods();
         List<model.Edge> result = new ArrayList<>();
-        long start = System.nanoTime();
+         long start = System.nanoTime();
         if ("Kruskal".equals(selectedAlgorithm)) {
-            result = methods.kruskal(g);
+            result = MethotdsController.kruskal(g);
         } else if ("Prim".equals(selectedAlgorithm)) {
-            result = methods.prim(g);
+            result = MethotdsController.prim(g);
         } else if ("DFS".equals(selectedAlgorithm)) {
-            // usar vértice 0 como inicio por defecto (puede cambiarse posteriormente si desea pedir al usuario)
-            result = methods.dfs(g, 0);
+            // usar vértice 0 como inicio por defecto
+            result = MethotdsController.dfs(g, 0);
         } else {
             // otros métodos no esperados
             pathTextArea.setText("Método no implementado");
@@ -603,13 +604,12 @@ public class GraphInterface extends JFrame {
             JOptionPane.showMessageDialog(this, "Seleccione un grafo para eliminar", "Atención", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        var grafos = GestorArchivo.getGrafos();
+        var grafos = GestorArchivoController.obtenerGrafos();
         if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
             JOptionPane.showMessageDialog(this, "Grafo inválido", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         model.Graph g = grafos.get(selectedGraphIndex);
-        Methods methods = new Methods();
         
         List<model.Edge> res1 = null;
         List<model.Edge> res2 = null;
@@ -619,15 +619,15 @@ public class GraphInterface extends JFrame {
         // ejecutar m1
         if ("Kruskal".equals(m1)) {
             long s = System.nanoTime();
-            res1 = methods.kruskal(g);
+            res1 = MethotdsController.kruskal(g);
             t1 = System.nanoTime() - s;
         } else if ("Prim".equals(m1)) {
             long s = System.nanoTime();
-            res1 = methods.prim(g);
+            res1 = MethotdsController.prim(g);
             t1 = System.nanoTime() - s;
         } else if ("DFS".equals(m1)) {
             long s = System.nanoTime();
-            res1 = methods.dfs(g, 0); // inicio por defecto = 0
+            res1 = MethotdsController.dfs(g, 0); // inicio por defecto = 0
             t1 = System.nanoTime() - s;
         } else {
             impl1 = false;
@@ -636,15 +636,15 @@ public class GraphInterface extends JFrame {
         // ejecutar m2
         if ("Kruskal".equals(m2)) {
             long s = System.nanoTime();
-            res2 = methods.kruskal(g);
+            res2 = MethotdsController.kruskal(g);
             t2 = System.nanoTime() - s;
         } else if ("Prim".equals(m2)) {
             long s = System.nanoTime();
-            res2 = methods.prim(g);
+            res2 = MethotdsController.prim(g);
             t2 = System.nanoTime() - s;
         } else if ("DFS".equals(m2)) {
             long s = System.nanoTime();
-            res2 = methods.dfs(g, 0); // inicio por defecto = 0
+            res2 = MethotdsController.dfs(g, 0); // inicio por defecto = 0
             t2 = System.nanoTime() - s;
         } else {
             impl2 = false;
@@ -843,7 +843,7 @@ public class GraphInterface extends JFrame {
             nodes.clear();
             edges.clear();
             
-            var grafos = GestorArchivo.getGrafos();
+            var grafos = GestorArchivoController.obtenerGrafos();
             if (grafos == null || idx < 0 || idx >= grafos.size()) {
                 currentGraphIndex = -1;
                 return;

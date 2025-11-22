@@ -7,7 +7,7 @@ import java.util.List;
 public class Methods {
     
     //ALGORITMO DE KRUSKAL
-    public List<Edge> kruskal (Graph G){
+    public static List<Edge> kruskal (Graph G){
         // Asegurar que consideramos el grafo como no dirigido:
         // para cada par {u,v} tomar la arista de menor peso (si existen u->v y v->u)
         java.util.Map<Long, Edge> best = new java.util.HashMap<>();
@@ -40,7 +40,7 @@ public class Methods {
     }
 
     // ALGORITMO DE PRIM (versión O(V^2) para matriz de adyacencia)
-    public List<Edge> prim(Graph G) {
+    public static List<Edge> prim(Graph G) {
         int n = G.getNumNodos();
         List<Edge> mst = new ArrayList<>();
         if (n == 0) return mst;
@@ -102,7 +102,7 @@ public class Methods {
     }
 
     // ALGORITMO DE DFS (usa matriz de adyacencia) - devuelve aristas del árbol/selva DFS
-    public List<Edge> dfs(Graph G, int start) {
+    public  static List<Edge> dfs(Graph G, int start) {
         int n = G.getNumNodos();
         List<Edge> tree = new ArrayList<>();
         if (n == 0) return tree;
@@ -137,7 +137,7 @@ public class Methods {
         return tree;
     }
 
-    private void dfsVisit(int u, int parent, boolean[] visited, int[][] w, List<Edge> tree) {
+    private static void dfsVisit(int u, int parent, boolean[] visited, int[][] w, List<Edge> tree) {
         if (visited[u]) return;
         visited[u] = true;
         if (parent != -1) {
