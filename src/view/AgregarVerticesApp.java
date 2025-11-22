@@ -504,7 +504,6 @@ public class AgregarVerticesApp extends JFrame {
             g2.setColor(new Color(255, 255, 255, 240)); // blanco para contraste
             FontMetrics fm = g2.getFontMetrics();
             int textW = fm.stringWidth(label);
-            int textH = fm.getAscent();
             int textX = cx - textW / 2;
             int textY = cy - 2 - (weight != null && !weight.isEmpty() ? 6 : 0); // ajustar si hay peso
             g2.drawString(label, textX, textY);

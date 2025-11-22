@@ -917,8 +917,6 @@ public class GraphInterface extends JFrame {
             Font nodeFont = new Font("SansSerif", Font.BOLD, 14);
             g2.setFont(nodeFont);
             FontMetrics fm = g2.getFontMetrics(); // Métricas para texto de nodo
-            int defaultNodeTextWidth = fm.stringWidth("sads"); // Ancho de referencia
-            int defaultNodeTextHeight = fm.getHeight();
 
             // PRE-CÁLCULO: diámetro dinámico por nodo (usar mismo criterio que el dibujo de nodos)
             int nNodes = nodes.size();
