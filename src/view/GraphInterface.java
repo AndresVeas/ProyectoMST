@@ -13,7 +13,7 @@ import model.GestorArchivo;
 import model.Methods;
 
 public class GraphInterface extends JFrame {
-
+    
     // Paleta de colores estilo "Tailwind" basada en tu imagen
     private static final Color BG_COLOR = new Color(243, 244, 246); // Slate-100
     private static final Color PANEL_BG = Color.WHITE;
@@ -22,29 +22,29 @@ public class GraphInterface extends JFrame {
     private static final Color TEXT_GRAY = new Color(100, 116, 139); // Slate-500
     private static final Color GRAPH_BG = new Color(51, 65, 85); // Slate-700 (Fondo oscuro para el grafo)
     private static final Color NODE_COLOR = new Color(148, 163, 184); // Slate-400
-
+    
     // Estado seleccionable
     private int selectedGraphIndex = -1;
     private String selectedAlgorithm = null;
-
+    
     // Componentes a los que hay que acceder desde varios métodos
     private GraphCanvas graphCanvas;
     private final List<JButton> graphButtons = new ArrayList<>();
     private final List<JButton> navButtons = new ArrayList<>();
-
+    
     // panel grid para botones de grafos (se usa para refrescar al eliminar)
     private JPanel graphGridPanel;
-
+    
     // Panel central con CardLayout para alternar entre vista normal y comparación
     private JPanel centerCardPanel;
     private CardLayout centerCardLayout;
     private JPanel defaultCenterContent;
-
+    
     // Labels para información dinámica
     private JTextArea pathTextArea;
     private JLabel timeValueLabel;
     private JLabel weightValueLabel; // nuevo: peso total
-
+    
     public GraphInterface() {
         setTitle("ÁRBOL DE EXPANSIÓN MINIMA (MST)");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -53,7 +53,7 @@ public class GraphInterface extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
-
+        
         // Al cerrar ventana, guardar cambios antes de salir
         addWindowListener(new WindowAdapter() {
             @Override
@@ -67,23 +67,23 @@ public class GraphInterface extends JFrame {
                 System.exit(0);
             }
         });
-
+        
         // --- Título Principal ---
         var titleLabel = new JLabel("ÁRBOL DE EXPANSIÓN MINIMA (MST)", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 32));
         titleLabel.setForeground(TEXT_DARK);
         titleLabel.setBorder(new EmptyBorder(20, 0, 20, 0));
         add(titleLabel, BorderLayout.NORTH);
-
+        
         // --- Contenedor Principal (con margen) ---
         var mainContainer = new JPanel(new BorderLayout(20, 0));
         mainContainer.setBackground(BG_COLOR);
         mainContainer.setBorder(new EmptyBorder(0, 30, 30, 30));
         add(mainContainer, BorderLayout.CENTER);
-
+        
         // 1. Panel Izquierdo (Sidebar)
         mainContainer.add(createSidebar(), BorderLayout.WEST);
-
+        
         // 2. Panel Central (usamos CardLayout para poder mostrar comparación en lugar de diálogo)
         defaultCenterContent = createCentralPanel();
         centerCardPanel = new JPanel(new CardLayout());
@@ -91,7 +91,7 @@ public class GraphInterface extends JFrame {
         centerCardPanel.add(defaultCenterContent, "default");
         mainContainer.add(centerCardPanel, BorderLayout.CENTER);
     }
-
+    
     private JPanel createSidebar() {
         var sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
@@ -105,7 +105,7 @@ public class GraphInterface extends JFrame {
         label.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidebar.add(label);
         sidebar.add(Box.createRigidArea(new Dimension(0, 15)));
-
+        
         // Grid de botones G1, G2...
         // aumentar espacio vertical para la lista de grafos
         graphGridPanel = new JPanel(new GridLayout(6, 2, 8, 8));
@@ -114,24 +114,24 @@ public class GraphInterface extends JFrame {
         graphGridPanel.setMaximumSize(new Dimension(140, 360));
         
         refreshGraphButtons();
-
+        
         sidebar.add(graphGridPanel);
         // empuja los botones hacia abajo
         sidebar.add(Box.createVerticalGlue());
-
+        
         // Botón Agregar (+)
         var addButton = new CircleButton("+");
         addButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidebar.add(addButton);
         sidebar.add(Box.createRigidArea(new Dimension(0, 6)));
-
+        
         addButton.addActionListener(e -> {
-                    AgregarVerticesApp a = new AgregarVerticesApp();
-                    a.setLocationRelativeTo(null);
-                    a.setVisible(true);
-                    this.dispose();
+            AgregarVerticesApp a = new AgregarVerticesApp();
+            a.setLocationRelativeTo(null);
+            a.setVisible(true);
+            this.dispose();
         });
-
+        
         // etiqueta del botón agregar
         var addLabel = new JLabel("Agregar grafo");
         addLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
@@ -139,13 +139,13 @@ public class GraphInterface extends JFrame {
         addLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidebar.add(addLabel);
         sidebar.add(Box.createRigidArea(new Dimension(0, 12)));
-
+        
         // Botón Eliminar (-) debajo del +
         var removeButton = new CircleMinusButton("-");
         removeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidebar.add(removeButton);
         sidebar.add(Box.createRigidArea(new Dimension(0, 6)));
-
+        
         removeButton.addActionListener(e -> {
             if (selectedGraphIndex < 0) {
                 JOptionPane.showMessageDialog(this, "primero seleccione un grafo", "Atención", JOptionPane.WARNING_MESSAGE);
@@ -153,7 +153,7 @@ public class GraphInterface extends JFrame {
             }
             int opt = JOptionPane.showConfirmDialog(this, "Seguro que desea eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (opt != JOptionPane.YES_OPTION) return;
-
+            
             var grafos = GestorArchivo.getGrafos();
             if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
                 JOptionPane.showMessageDialog(this, "Grafo inválido", "Error", JOptionPane.ERROR_MESSAGE);
@@ -171,19 +171,19 @@ public class GraphInterface extends JFrame {
             refreshGraphButtons();
             graphCanvas.repaint();
         });
-
+        
         // etiqueta del botón eliminar
         var removeLabel = new JLabel("Eliminar grafo");
         removeLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         removeLabel.setForeground(TEXT_GRAY);
         removeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         sidebar.add(removeLabel);
-
+        
         sidebar.add(Box.createRigidArea(new Dimension(0, 5)));
- 
-         return sidebar;
-     }
-
+        
+        return sidebar;
+    }
+    
     // Reconstruye los botones de grafos en la barra lateral
     private void refreshGraphButtons() {
         graphGridPanel.removeAll();
@@ -204,7 +204,7 @@ public class GraphInterface extends JFrame {
     private JPanel createCentralPanel() {
         var centerPanel = new JPanel(new BorderLayout(0, 20));
         centerPanel.setOpaque(false);
-
+        
         // --- Top: Algoritmos ---
         var navPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         navPanel.setOpaque(false);
@@ -214,12 +214,12 @@ public class GraphInterface extends JFrame {
         var bPrim = createNavButton("Prim");
         var bDFS = createNavButton("DFS");
         var bComparar = createNavButton("Comparar");
-
+        
         navButtons.add(bKruskal);
         navButtons.add(bPrim);
         navButtons.add(bDFS);
         navButtons.add(bComparar);
-
+        
         navPanel.add(bKruskal);
         navPanel.add(bPrim);
         navPanel.add(bDFS);
@@ -237,29 +237,29 @@ public class GraphInterface extends JFrame {
             cmpMenu.add(kp); cmpMenu.add(kd); cmpMenu.add(pd);
             cmpMenu.show(bComparar, 0, bComparar.getHeight());
         });
-
+        
         centerPanel.add(navPanel, BorderLayout.NORTH);
-
+        
         // --- Center: Visualización del Grafo ---
         graphCanvas = new GraphCanvas();
         centerPanel.add(graphCanvas, BorderLayout.CENTER);
-
+        
         // --- Bottom: Información ---
         var infoPanel = new JPanel(new GridLayout(1, 3, 20, 0)); // ahora 3 columnas: Camino | Peso total | Tiempo
         infoPanel.setOpaque(false);
         infoPanel.setPreferredSize(new Dimension(0, 80)); // tamaño reducido
-
+        
         infoPanel.add(createPathInfoBox("Camino mínimo", "N/A"));
         infoPanel.add(createWeightInfoBox("Peso total del recorrido", "0"));
         infoPanel.add(createTimeInfoBox("Tiempo de ejecución", "0 ns"));
-
+        
         centerPanel.add(infoPanel, BorderLayout.SOUTH);
-
+        
         return centerPanel;
     }
-
+    
     // --- Componentes Personalizados y Helpers ---
-
+    
     private JButton createSquareButton(String text, int index) {
         var btn = new JButton(text);
         btn.setFont(new Font("SansSerif", Font.PLAIN, 14));
@@ -278,7 +278,7 @@ public class GraphInterface extends JFrame {
         });
         return btn;
     }
-
+    
     private JButton createNavButton(String text) {
         var btn = new JButton(text) {
             @Override
@@ -306,7 +306,7 @@ public class GraphInterface extends JFrame {
         btn.addActionListener(e -> selectAlgorithm(text));
         return btn;
     }
-
+    
     private JPanel createPathInfoBox(String title, String value) {
         var panel = new JPanel(new GridLayout(2, 1));
         panel.setBackground(PANEL_BG);
@@ -314,11 +314,11 @@ public class GraphInterface extends JFrame {
             BorderFactory.createLineBorder(new Color(226, 232, 240), 1), // Borde sutil
             new EmptyBorder(15, 15, 15, 15)
         ));
-
+        
         var titleLbl = new JLabel(title, SwingConstants.CENTER);
         titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
         titleLbl.setForeground(TEXT_GRAY);
-
+        
         // JTextArea dentro de JScrollPane para permitir múltiples líneas y scroll
         pathTextArea = new JTextArea(value);
         pathTextArea.setEditable(false);
@@ -331,12 +331,12 @@ public class GraphInterface extends JFrame {
         JScrollPane sp = new JScrollPane(pathTextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sp.setBorder(null);
         sp.getViewport().setBackground(PANEL_BG);
-
+        
         panel.add(titleLbl);
         panel.add(sp);
         return panel;
     }
-
+    
     private JPanel createWeightInfoBox(String title, String value) {
         var panel = new JPanel(new GridLayout(2, 1));
         panel.setBackground(PANEL_BG);
@@ -344,20 +344,20 @@ public class GraphInterface extends JFrame {
             BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
             new EmptyBorder(12, 12, 12, 12)
         ));
-
+        
         var titleLbl = new JLabel(title, SwingConstants.CENTER);
         titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 12));
         titleLbl.setForeground(TEXT_GRAY);
-
+        
         weightValueLabel = new JLabel(value, SwingConstants.CENTER);
         weightValueLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         weightValueLabel.setForeground(TEXT_DARK);
-
+        
         panel.add(titleLbl);
         panel.add(weightValueLabel);
         return panel;
     }
-
+    
     private JPanel createTimeInfoBox(String title, String value) {
         var panel = new JPanel(new GridLayout(2, 1));
         panel.setBackground(PANEL_BG);
@@ -365,20 +365,20 @@ public class GraphInterface extends JFrame {
             BorderFactory.createLineBorder(new Color(226, 232, 240), 1), // Borde sutil
             new EmptyBorder(10, 10, 10, 10)
         ));
-
+        
         var titleLbl = new JLabel(title, SwingConstants.CENTER);
         titleLbl.setFont(new Font("SansSerif", Font.PLAIN, 11));
         titleLbl.setForeground(TEXT_GRAY);
-
+        
         timeValueLabel = new JLabel(value, SwingConstants.CENTER);
         timeValueLabel.setFont(new Font("SansSerif", Font.BOLD, 13)); // tamaño reducido
         timeValueLabel.setForeground(TEXT_DARK);
-
+        
         panel.add(titleLbl);
         panel.add(timeValueLabel);
         return panel;
     }
-
+    
     // Clase interna para el botón circular (+)
     class CircleButton extends JButton {
         public CircleButton(String label) {
@@ -392,7 +392,7 @@ public class GraphInterface extends JFrame {
             setFont(new Font("SansSerif", Font.BOLD, 24));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
-
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -403,7 +403,7 @@ public class GraphInterface extends JFrame {
             g2.dispose();
         }
     }
-
+    
     // Botón circular rojo con signo menos
     class CircleMinusButton extends JButton {
         public CircleMinusButton(String label) {
@@ -417,7 +417,7 @@ public class GraphInterface extends JFrame {
             setFont(new Font("SansSerif", Font.BOLD, 28));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
-
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -428,7 +428,7 @@ public class GraphInterface extends JFrame {
             g2.dispose();
         }
     }
-
+    
     // Selecciona un grafo de la barra lateral (ahora toggle)
     private void selectGraph(int index) {
         // index == -1 significa deseleccionar
@@ -436,7 +436,7 @@ public class GraphInterface extends JFrame {
             index = -1;
         }
         selectedGraphIndex = index;
-
+        
         // Actualizar estilo de botones de grafos
         for (int i = 0; i < graphButtons.size(); i++) {
             JButton b = graphButtons.get(i);
@@ -448,11 +448,11 @@ public class GraphInterface extends JFrame {
                 b.setForeground(TEXT_GRAY);
             }
         }
-
+        
         // Decidir qué grafo mostrar en el canvas
         graphCanvas.setGraphIndex(index);
         graphCanvas.repaint();
-
+        
         // Si hay algoritmo seleccionado, re-ejecutarlo sobre el nuevo grafo
         if (selectedAlgorithm != null) {
             runSelectedAlgorithm();
@@ -464,7 +464,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.clearHighlights();
         }
     }
-
+    
     // Selecciona algoritmo en la barra superior (permanece marcado; ahora toggle)
     private void selectAlgorithm(String name) {
         if (name != null && name.equals(selectedAlgorithm)) {
@@ -473,7 +473,7 @@ public class GraphInterface extends JFrame {
         } else {
             selectedAlgorithm = name;
         }
-
+        
         for (JButton b : navButtons) {
             if (b.getText().equals(selectedAlgorithm)) {
                 b.setForeground(Color.WHITE);
@@ -483,7 +483,7 @@ public class GraphInterface extends JFrame {
         }
         // repintar para que los botones nav actualicen su apariencia
         repaint();
-
+        
         if (selectedAlgorithm != null) {
             runSelectedAlgorithm();
         } else {
@@ -495,7 +495,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.repaint();
         }
     }
-
+    
     // Ejecuta el algoritmo actualmente seleccionado sobre el grafo seleccionado
     private void runSelectedAlgorithm() {
         if (selectedGraphIndex < 0) {
@@ -506,7 +506,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.repaint();
             return;
         }
-
+        
         var grafos = GestorArchivo.getGrafos();
         if (grafos == null || selectedGraphIndex < 0 || selectedGraphIndex >= grafos.size()) {
             pathTextArea.setText("Grafo inválido");
@@ -516,7 +516,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.repaint();
             return;
         }
-
+        
         model.Graph g = grafos.get(selectedGraphIndex);
         if (g == null) {
             pathTextArea.setText("Grafo vacío");
@@ -526,7 +526,7 @@ public class GraphInterface extends JFrame {
             graphCanvas.repaint();
             return;
         }
-
+        
         Methods methods = new Methods();
         List<model.Edge> result = new ArrayList<>();
         long start = System.nanoTime();
@@ -547,7 +547,7 @@ public class GraphInterface extends JFrame {
             return;
         }
         long elapsedNs = System.nanoTime() - start;
-
+        
         // Actualizar info textual: formar representación del "camino" (lista de aristas) usando labels
         String[] labels = g.getListaVertices();
         if (result == null || result.isEmpty()) {
@@ -565,7 +565,7 @@ public class GraphInterface extends JFrame {
                 String lv = (labels != null && v >= 0 && v < labels.length && labels[v] != null) ? labels[v] : String.valueOf(v);
                 parts.add("(" + lu + " - " + lv + ": " + e.getWeight() + ")");
             }
-
+            
             // envolver en varias líneas (límite por caracteres) y usar saltos de línea para JTextArea
             int maxCharsPerLine = 60; // ajustar si se desea
             StringBuilder text = new StringBuilder();
@@ -585,18 +585,18 @@ public class GraphInterface extends JFrame {
                 }
             }
             if (line.length() > 0) text.append(line.toString());
-
+            
             pathTextArea.setText(text.toString());
             pathTextArea.setCaretPosition(0);
             weightValueLabel.setText(String.valueOf(totalWeight));
         }
         timeValueLabel.setText(elapsedNs + " ns");
-
+        
         // Indicar al canvas qué aristas/nodos resaltar
         graphCanvas.setHighlightedEdges(result);
         graphCanvas.repaint();
     }
-
+    
     // Comparar dos métodos en el panel central (reemplaza la tarjeta "default" por "compare")
     private void compareMethods(String m1, String m2) {
         if (selectedGraphIndex < 0) {
@@ -610,12 +610,12 @@ public class GraphInterface extends JFrame {
         }
         model.Graph g = grafos.get(selectedGraphIndex);
         Methods methods = new Methods();
-
+        
         List<model.Edge> res1 = null;
         List<model.Edge> res2 = null;
         long t1 = -1, t2 = -1;
         boolean impl1 = true, impl2 = true;
-
+        
         // ejecutar m1
         if ("Kruskal".equals(m1)) {
             long s = System.nanoTime();
@@ -632,7 +632,7 @@ public class GraphInterface extends JFrame {
         } else {
             impl1 = false;
         }
-
+        
         // ejecutar m2
         if ("Kruskal".equals(m2)) {
             long s = System.nanoTime();
@@ -649,10 +649,10 @@ public class GraphInterface extends JFrame {
         } else {
             impl2 = false;
         }
-
+        
         // Preparar panel de comparación y mostrar en la tarjeta "compare"
         JPanel comparePanel = new JPanel(new BorderLayout(10, 10));
-
+        
         // panel central con dos canvases (izq/dcho)
         JPanel center = new JPanel(new GridLayout(1, 2, 10, 0));
         GraphCanvas gcLeft = new GraphCanvas();
@@ -665,11 +665,11 @@ public class GraphInterface extends JFrame {
         center.add(gcLeft);
         center.add(gcRight);
         comparePanel.add(center, BorderLayout.CENTER);
-
+        
         // panel inferior con info para ambos (caminos y tiempos)
         JPanel info = new JPanel(new GridLayout(1, 2, 10, 0));
         info.setBorder(new EmptyBorder(8, 8, 8, 8));
-
+        
         String[] labels = g.getListaVertices();
         // izquierdo
         JPanel leftInfo = new JPanel(new BorderLayout(6, 6));
@@ -703,7 +703,7 @@ public class GraphInterface extends JFrame {
         leftInfo.add(new JLabel(m1, SwingConstants.CENTER), BorderLayout.NORTH);
         leftInfo.add(new JScrollPane(leftText, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
         leftInfo.add(leftTime, BorderLayout.SOUTH);
-
+        
         // derecho
         JPanel rightInfo = new JPanel(new BorderLayout(6, 6));
         rightInfo.setBackground(PANEL_BG);
@@ -736,15 +736,15 @@ public class GraphInterface extends JFrame {
         rightInfo.add(new JLabel(m2, SwingConstants.CENTER), BorderLayout.NORTH);
         rightInfo.add(new JScrollPane(rightText, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER), BorderLayout.CENTER);
         rightInfo.add(rightTime, BorderLayout.SOUTH);
-
+        
         info.add(leftInfo);
         info.add(rightInfo);
         comparePanel.add(info, BorderLayout.SOUTH);
-
+        
         // Panel superior con título y botón volver (estética igual que botones nav)
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setOpaque(false);
-
+        
         // botón "Volver" con estilo similar a los nav buttons
         JButton backBtn = new JButton("Volver") {
             @Override
@@ -769,22 +769,22 @@ public class GraphInterface extends JFrame {
             centerCardLayout.show(centerCardPanel, "default");
             centerCardPanel.remove(comparePanel);
         });
-
+        
         // Título centrado; añadimos un filler a la derecha con el mismo tamaño del botón
         JLabel title = new JLabel("Comparación: " + m1 + " vs " + m2, SwingConstants.CENTER);
         title.setFont(new Font("SansSerif", Font.BOLD, 16));
         Dimension btnSize = backBtn.getPreferredSize();
         Component eastFiller = Box.createRigidArea(btnSize);
-
+        
         topBar.add(backBtn, BorderLayout.WEST);
         topBar.add(title, BorderLayout.CENTER);
         topBar.add(eastFiller, BorderLayout.EAST);
         comparePanel.add(topBar, BorderLayout.NORTH);
-
+        
         // añadir y mostrar tarjeta "compare"
         centerCardPanel.add(comparePanel, "compare");
         centerCardLayout.show(centerCardPanel, "compare");
-
+        
         // forzar reconstrucción/centrado de los canvases una vez que el layout termine
         SwingUtilities.invokeLater(() -> {
             // volver a fijar índice para que rebuild use tamaños reales
@@ -796,29 +796,29 @@ public class GraphInterface extends JFrame {
             gcRight.repaint();
         });
     }
-
+    
     // Clase interna para dibujar el Grafo
     class GraphCanvas extends JPanel {
         record Node(String id, int x, int y) {}
         record Edge(Node n1, Node n2, int w, int i, int j) {}
-
+        
         private final List<Node> nodes = new ArrayList<>();
         private final List<Edge> edges = new ArrayList<>();
         private int currentGraphIndex = -1;
-
+        
         // conjuntos de resaltado (usar clave "u->v")
         private final Set<String> highlightedEdgeKeys = new HashSet<>();
         private final Set<Integer> highlightedNodeIdx = new HashSet<>();
-
+        
         public GraphCanvas() {
             setBackground(GRAPH_BG);
         }
-
+        
         public void setGraphIndex(int idx) {
             currentGraphIndex = idx;
             rebuildGraphForIndex(idx);
         }
-
+        
         public void setHighlightedEdges(List<model.Edge> modelEdges) {
             highlightedEdgeKeys.clear();
             highlightedNodeIdx.clear();
@@ -833,35 +833,35 @@ public class GraphInterface extends JFrame {
                 highlightedNodeIdx.add(v);
             }
         }
-
+        
         public void clearHighlights() {
             highlightedEdgeKeys.clear();
             highlightedNodeIdx.clear();
         }
-
+        
         private void rebuildGraphForIndex(int idx) {
             nodes.clear();
             edges.clear();
-
+            
             var grafos = GestorArchivo.getGrafos();
             if (grafos == null || idx < 0 || idx >= grafos.size()) {
                 currentGraphIndex = -1;
                 return;
             }
-
+            
             model.Graph g = grafos.get(idx);
             if (g == null) {
                 currentGraphIndex = -1;
                 return;
             }
-
+            
             String[] labels = g.getListaVertices();
             int[][] mat = g.getMatrizAd();
             if (labels == null || mat == null) {
                 currentGraphIndex = -1;
                 return;
             }
-
+            
             int n = labels.length;
             // Coordenadas basadas en la zona disponible (si aún no tiene tamaño, usar valores por defecto)
             int w = Math.max(1, getWidth());
@@ -870,7 +870,7 @@ public class GraphInterface extends JFrame {
             int cy = h / 2;
             int radius = (int) (Math.min(w, h) * 0.35);
             if (radius < 80) radius = 80;
-
+            
             // Crear nodos en círculo
             for (int i = 0; i < n; i++) {
                 double angle = 2 * Math.PI * i / Math.max(1, n);
@@ -879,22 +879,22 @@ public class GraphInterface extends JFrame {
                 String id = labels[i] == null ? String.valueOf(i + 1) : labels[i];
                 nodes.add(new Node(id, x, y));
             }
-
+            
             // Crear aristas a partir de la matriz de adyacencia (ahora dirigido: mat[i][j] representa i->j)
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                     int peso = 0;
-                     if (i < mat.length && j < mat[i].length) peso = mat[i][j];
-                     if (peso > 0) {
+                    int peso = 0;
+                    if (i < mat.length && j < mat[i].length) peso = mat[i][j];
+                    if (peso > 0) {
                         // permitir lazos (i == j) y aristas normales
                         edges.add(new Edge(nodes.get(i), nodes.get(j), peso, i, j));
-                     }
+                    }
                 }
             }
-
+            
             currentGraphIndex = idx;
         }
-
+        
         @Override
         protected void paintComponent(Graphics g0) {
             super.paintComponent(g0);
@@ -912,8 +912,27 @@ public class GraphInterface extends JFrame {
                 return;
             }
 
+            // --- Variables y Métricas de Fuente (Inicialización) ---
+            int defaultNodeDiameter = 40;
+            Font nodeFont = new Font("SansSerif", Font.BOLD, 14);
+            g2.setFont(nodeFont);
+            FontMetrics fm = g2.getFontMetrics(); // Métricas para texto de nodo
+            int defaultNodeTextWidth = fm.stringWidth("sads"); // Ancho de referencia
+            int defaultNodeTextHeight = fm.getHeight();
+
+            // PRE-CÁLCULO: diámetro dinámico por nodo (usar mismo criterio que el dibujo de nodos)
+            int nNodes = nodes.size();
+            double[] nodeDiameters = new double[nNodes];
+            for (int ni = 0; ni < nNodes; ni++) {
+                String nodeText = nodes.get(ni).id;
+                int tw = fm.stringWidth(nodeText);
+                int th = fm.getHeight();
+                int minDiameter = Math.max(defaultNodeDiameter, tw + 20);
+                minDiameter = Math.max(minDiameter, th + 10);
+                nodeDiameters[ni] = minDiameter;
+            }
+
             // Dibujar aristas (con flechas al final indicando dirección) y etiquetas de peso
-            int nodeDiameter = 40;
             for (var edge : edges) {
                 int x1 = edge.n1.x;
                 int y1 = edge.n1.y;
@@ -928,66 +947,50 @@ public class GraphInterface extends JFrame {
                 // Variables para la posición de la etiqueta de peso (se calculan según tipo de arista)
                 double tx, ty;
 
+                // Usar diámetros reales por nodo
+                double diaU = (edge.i >= 0 && edge.i < nodeDiameters.length) ? nodeDiameters[edge.i] : defaultNodeDiameter;
+                double diaV = (edge.j >= 0 && edge.j < nodeDiameters.length) ? nodeDiameters[edge.j] : defaultNodeDiameter;
+
+                // NOTA: Para el lazo, necesitamos el diámetro del nodo n1 para el cálculo del lazo/flecha
+                int loopDiameter = (int) Math.round(diaU);
+
                 if (edge.i == edge.j) {
                     // LAZO SUPERIOR: Curva que sale y entra por el lado izquierdo/superior y derecho/superior
                     int nx = x1;
                     int ny = y1;
-                    double r2 = nodeDiameter / 2.0;
+                    double r2 = loopDiameter / 2.0;
 
                     // Puntos de inicio y fin en la parte superior del nodo
-                    // Inicio (Superior-Izquierdo, aprox 20 grados)
                     double angleStart = Math.toRadians(200);
                     double sx = nx + r2 * Math.cos(angleStart);
                     double sy = ny + r2 * Math.sin(angleStart);
 
-                    // Fin (Superior-Derecho, aprox 340 grados)
                     double angleEnd = Math.toRadians(340);
                     double ex = nx + r2 * Math.cos(angleEnd);
                     double ey = ny + r2 * Math.sin(angleEnd);
 
-                    // Distancia vertical que se extiende el lazo por encima del nodo (arco)
-                    double loopHeight = Math.max(50, nodeDiameter * 1.8);
+                    double loopHeight = Math.max(50, loopDiameter * 1.8);
 
-                    // Puntos de control para la curva cúbica
-                    // C1: Extendido verticalmente hacia arriba desde el punto de inicio
                     double c1x = sx;
                     double c1y = sy - loopHeight;
-
-                    // C2: Extendido verticalmente hacia arriba desde el punto final
                     double c2x = ex;
                     double c2y = ey - loopHeight;
 
-                    // Dibujar la curva
                     g2.draw(new java.awt.geom.CubicCurve2D.Double(sx, sy, c1x, c1y, c2x, c2y, ex, ey));
 
-                    // --- Dibujar flecha en el punto de entrada (ex, ey) ---
+                    // Flecha en el punto de entrada (ex, ey)
                     double ax = ex;
                     double ay = ey;
-
-                    // Para la flecha, usaremos la TANGENTE al punto de entrada.
-                    // La dirección de la flecha debe apuntar *hacia la curva* (hacia el centro de la curva),
-                    // no radialmente al centro del nodo.
-                    
-                    // Vector entre C2 y el punto de fin (ex, ey)
-                    // Este es el vector de dirección de la curva en el punto final.
                     double dxCurve = ax - c2x;
                     double dyCurve = ay - c2y;
                     double dlen = Math.max(0.0001, Math.hypot(dxCurve, dyCurve));
-
-                    // Vector unitario en la dirección de la curva (hacia el nodo)
                     double udx = dxCurve / dlen;
                     double udy = dyCurve / dlen;
 
-                    // Dimensiones de la flecha
                     double aLen = 12.0;
                     double aHalf = 6.0;
-
-                    // Base de la flecha (detrás de la punta)
-                    // Usamos la dirección unitaria de la curva
                     double bx1 = ax - udx * aLen;
                     double by1 = ay - udy * aLen;
-
-                    // Perpendicular para las alas (vector normal a la curva)
                     double px = -udy;
                     double py = udx;
 
@@ -995,18 +998,17 @@ public class GraphInterface extends JFrame {
                     int[] ays = {(int) Math.round(ay), (int) Math.round(by1 + py * aHalf), (int) Math.round(by1 - py * aHalf)};
                     g2.fillPolygon(axs, ays, 3);
 
-
                     // colocar etiqueta en el pico superior del lazo
-                    tx = nx; // centro horizontal
-                    ty = ny - loopHeight - 16; // por encima del pico
-                    
+                    tx = nx;
+                    ty = ny - loopHeight - 16;
+
                 } else {
                     // arista normal: línea entre nodos (recortada en los bordes de los nodos) y flecha en el extremo
                     double angle = Math.atan2(y2 - y1, x2 - x1);
-                    double sx = x1 + Math.cos(angle) * (nodeDiameter / 2.0);
-                    double sy = y1 + Math.sin(angle) * (nodeDiameter / 2.0);
-                    double ex = x2 - Math.cos(angle) * (nodeDiameter / 2.0);
-                    double ey = y2 - Math.sin(angle) * (nodeDiameter / 2.0);
+                    double sx = x1 + Math.cos(angle) * (diaU / 2.0);
+                    double sy = y1 + Math.sin(angle) * (diaU / 2.0);
+                    double ex = x2 - Math.cos(angle) * (diaV / 2.0);
+                    double ey = y2 - Math.sin(angle) * (diaV / 2.0);
 
                     g2.drawLine((int) sx, (int) sy, (int) ex, (int) ey);
 
@@ -1041,36 +1043,51 @@ public class GraphInterface extends JFrame {
                     ty = my + ny_ * offset;
                 }
 
-                // Dibujar etiqueta de peso (siempre centrada en el medio de la arista)
-                g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
-                g2.setColor(TEXT_GRAY);
+                // --- Dibujar etiqueta de peso (Corregido para visibilidad) ---
+                g2.setFont(new Font("SansSerif", Font.BOLD, 13));
                 String weightText = String.valueOf(edge.w);
-                FontMetrics fm = g2.getFontMetrics();
-                double tw = fm.stringWidth(weightText);
-                double th = fm.getHeight();
+                FontMetrics wfm = g2.getFontMetrics(); // Obtener métricas para la fuente de peso
+                double tw = wfm.stringWidth(weightText);
+                double th = wfm.getHeight();
+
+                int labelX = (int) (tx - tw / 2);
+                int labelY = (int) (ty - th / 2);
+                int labelW = (int) tw + 8; // Añadir padding
+                int labelH = (int) th + 4;
+
+                g2.setColor(new Color(241, 245, 249, 200));
+                g2.fillRoundRect(labelX - 4, labelY, labelW, labelH, 5, 5);
+
+                g2.setColor(TEXT_DARK);
                 g2.drawString(weightText, (int) (tx - tw / 2), (int) (ty + th / 4));
             }
 
-            // Dibujar nodos
+            // --- Dibujar nodos (con tamaño dinámico) ---
             for (var node : nodes) {
                 int x = node.x;
                 int y = node.y;
                 boolean isHighlighted = highlightedNodeIdx.contains(nodes.indexOf(node));
 
+                g2.setFont(nodeFont);
+                String nodeText = node.id;
+                FontMetrics currentFm = g2.getFontMetrics();
+                int tw = currentFm.stringWidth(nodeText);
+                int th = currentFm.getHeight();
+
+                int minDiameter = Math.max(defaultNodeDiameter, tw + 20);
+                minDiameter = Math.max(minDiameter, th + 10);
+
+                int currentDiameter = minDiameter;
+                int currentRadius = currentDiameter / 2;
+
                 g2.setColor(isHighlighted ? Color.ORANGE : NODE_COLOR);
-                g2.fillOval(x - nodeDiameter / 2, y - nodeDiameter / 2, nodeDiameter, nodeDiameter);
+                g2.fillOval(x - currentRadius, y - currentRadius, currentDiameter, currentDiameter);
 
                 g2.setColor(Color.WHITE);
                 g2.setStroke(new BasicStroke(2));
-                g2.drawOval(x - nodeDiameter / 2, y - nodeDiameter / 2, nodeDiameter, nodeDiameter);
+                g2.drawOval(x - currentRadius, y - currentRadius, currentDiameter, currentDiameter);
 
-                // Dibujar etiqueta de nodo (centrado)
                 g2.setColor(TEXT_DARK);
-                g2.setFont(new Font("SansSerif", Font.BOLD, 14));
-                String nodeText = node.id;
-                FontMetrics fm = g2.getFontMetrics();
-                int tw = fm.stringWidth(nodeText);
-                int th = fm.getHeight();
                 g2.drawString(nodeText, x - tw / 2, y + th / 4);
             }
         }

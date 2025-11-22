@@ -8,7 +8,19 @@ public class Methods {
     
     //ALGORITMO DE KRUSKAL
     public List<Edge> kruskal (Graph G){
-        List<Edge> edges = G.getEdges();
+        // Asegurar que consideramos el grafo como no dirigido:
+        // para cada par {u,v} tomar la arista de menor peso (si existen u->v y v->u)
+        java.util.Map<Long, Edge> best = new java.util.HashMap<>();
+        for (Edge e : G.getEdges()) {
+            int u = Math.min(e.getU(), e.getV());
+            int v = Math.max(e.getU(), e.getV());
+            long key = (((long) u) << 32) | (v & 0xffffffffL);
+            Edge prev = best.get(key);
+            if (prev == null || e.getWeight() < prev.getWeight()) {
+                best.put(key, new Edge(u, v, e.getWeight()));
+            }
+        }
+        List<Edge> edges = new ArrayList<>(best.values());
         edges.sort(Comparator.comparingInt(Edge::getWeight));
         int n = G.getNumNodos();
         UnionFind uf = new UnionFind(n);
@@ -36,8 +48,18 @@ public class Methods {
         // construir matriz de pesos desde G.getEdges()
         int[][] w = new int[n][n];
         for (Edge e : G.getEdges()) {
-            w[e.getU()][e.getV()] = e.getWeight();
-            w[e.getV()][e.getU()] = e.getWeight();
+            int u = e.getU();
+            int v = e.getV();
+            int wt = e.getWeight();
+            // si ya hay una arista entre u-v, conservar el mínimo
+            if (w[u][v] == 0) {
+                w[u][v] = wt;
+                w[v][u] = wt;
+            } else {
+                int m = Math.min(w[u][v], wt);
+                w[u][v] = m;
+                w[v][u] = m;
+            }
         }
 
         boolean[] used = new boolean[n];
@@ -88,8 +110,17 @@ public class Methods {
         // construir matriz de adyacencia (peso > 0 indica arista)
         int[][] w = new int[n][n];
         for (Edge e : G.getEdges()) {
-            w[e.getU()][e.getV()] = e.getWeight();
-            w[e.getV()][e.getU()] = e.getWeight();
+            int u = e.getU();
+            int v = e.getV();
+            int wt = e.getWeight();
+            if (w[u][v] == 0) {
+                w[u][v] = wt;
+                w[v][u] = wt;
+            } else {
+                int m = Math.min(w[u][v], wt);
+                w[u][v] = m;
+                w[v][u] = m;
+            }
         }
 
         boolean[] visited = new boolean[n];

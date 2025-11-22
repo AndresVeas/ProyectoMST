@@ -10,6 +10,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 
 public class AgregarVerticesApp extends JFrame {
 
@@ -391,6 +392,122 @@ public class AgregarVerticesApp extends JFrame {
             arrowHead.lineTo(arrowX + 15, arrowY);
             arrowHead.lineTo(arrowX + 15 - arrowSize, arrowY + arrowSize);
             g2.draw(arrowHead);
+
+            g2.dispose();
+        }
+    }
+
+    /** 5. Componente: Círculo de nodo que se agranda según el texto y muestra peso en blanco y bold */
+    static class NodeCircle extends JComponent {
+        private String label = "";
+        private String weight = "";
+        private int baseDiameter = 40;      // diámetro mínimo
+        private int padding = 12;          // padding horizontal para texto
+        private Color fillColor = COLOR_PRIMARY;
+        private Color borderColor = COLOR_PRIMARY_HOVER;
+
+        public NodeCircle(String label, String weight) {
+            this.label = label != null ? label : "";
+            this.weight = weight != null ? weight : "";
+            setOpaque(false);
+            updatePreferredSize();
+        }
+
+        public void setLabel(String label) {
+            this.label = label != null ? label : "";
+            updatePreferredSize();
+            repaint();
+        }
+
+        public void setWeight(String weight) {
+            this.weight = weight != null ? weight : "";
+            updatePreferredSize();
+            repaint();
+        }
+
+        private void updatePreferredSize() {
+            // Medir ancho del texto usando un Graphics2D temporal para asegurar mediciones válidas
+            Font fLabel = FONT_INPUT.deriveFont(Font.BOLD, 14f);
+            Font fWeight = FONT_INPUT.deriveFont(Font.BOLD, 13f);
+
+            BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            g.setFont(fLabel);
+            FontMetrics fm = g.getFontMetrics();
+            int textW = fm.stringWidth(label);
+
+            g.setFont(fWeight);
+            FontMetrics fmW = g.getFontMetrics();
+            int weightW = fmW.stringWidth(weight);
+
+            g.dispose();
+
+            int needed = Math.max(textW, weightW) + padding * 2;
+            int diameter = Math.max(baseDiameter, needed);
+
+            Dimension d = new Dimension(diameter + 6, diameter + 6); // margen pequeño
+            setPreferredSize(d);
+            setMinimumSize(d);
+            // Permitir que crezca horizontalmente si el layout lo requiere, pero no lo comprima por debajo del pref
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, d.height));
+
+            revalidate();
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            // Pintar primero el fondo transparente si hace falta
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int w = getWidth();
+            int h = getHeight();
+            int diameter = Math.min(w - 2, h - 2);
+            diameter = Math.max(diameter, baseDiameter); // asegurar diámetro mínimo
+
+            // Centro
+            int cx = w / 2;
+            int cy = h / 2;
+            int x = cx - diameter / 2;
+            int y = cy - diameter / 2;
+
+            // Fondo del círculo
+            g2.setColor(fillColor);
+            g2.fillOval(x, y, diameter, diameter);
+
+            // Borde sutil
+            g2.setStroke(new BasicStroke(2f));
+            g2.setColor(borderColor);
+            g2.drawOval(x, y, diameter, diameter);
+
+            // Texto de etiqueta (centrado, encima)
+            Font fLabel = FONT_INPUT.deriveFont(Font.BOLD, 14f);
+            g2.setFont(fLabel);
+            g2.setColor(new Color(255, 255, 255, 240)); // blanco para contraste
+            FontMetrics fm = g2.getFontMetrics();
+            int textW = fm.stringWidth(label);
+            int textH = fm.getAscent();
+            int textX = cx - textW / 2;
+            int textY = cy - 2 - (weight != null && !weight.isEmpty() ? 6 : 0); // ajustar si hay peso
+            g2.drawString(label, textX, textY);
+
+            // Peso: blanco y bold (debajo)
+            if (weight != null && !weight.isEmpty()) {
+                Font fWeight = FONT_INPUT.deriveFont(Font.BOLD, 13f);
+                g2.setFont(fWeight);
+                FontMetrics fmW = g2.getFontMetrics();
+                int wW = fmW.stringWidth(weight);
+                int wH = fmW.getAscent();
+                int weightX = cx - wW / 2;
+                int weightY = textY + wH + 6; // separación
+                g2.setColor(Color.WHITE);
+                g2.drawString(weight, weightX, weightY);
+            }
 
             g2.dispose();
         }
