@@ -79,6 +79,46 @@ public class Methods {
         return mst;
     }
 
+    // ALGORITMO DE DFS (usa matriz de adyacencia) - devuelve aristas del árbol/selva DFS
+    public List<Edge> dfs(Graph G, int start) {
+        int n = G.getNumNodos();
+        List<Edge> tree = new ArrayList<>();
+        if (n == 0) return tree;
+
+        // construir matriz de adyacencia (peso > 0 indica arista)
+        int[][] w = new int[n][n];
+        for (Edge e : G.getEdges()) {
+            w[e.getU()][e.getV()] = e.getWeight();
+            w[e.getV()][e.getU()] = e.getWeight();
+        }
+
+        boolean[] visited = new boolean[n];
+
+        // recorrer desde el vértice inicial
+        if (start < 0 || start >= n) start = 0;
+        dfsVisit(start, -1, visited, w, tree);
+
+        // si el grafo es desconectado, completar para los demás componentes
+        for (int v = 0; v < n; v++) {
+            if (!visited[v]) dfsVisit(v, -1, visited, w, tree);
+        }
+
+        return tree;
+    }
+
+    private void dfsVisit(int u, int parent, boolean[] visited, int[][] w, List<Edge> tree) {
+        if (visited[u]) return;
+        visited[u] = true;
+        if (parent != -1) {
+            tree.add(new Edge(parent, u, w[parent][u]));
+        }
+        for (int v = 0; v < w.length; v++) {
+            if (!visited[v] && w[u][v] > 0) {
+                dfsVisit(v, u, visited, w, tree);
+            }
+        }
+    }
+
     // Unión-find (disjoint set)
     private static class UnionFind {
         private final int[] parent;

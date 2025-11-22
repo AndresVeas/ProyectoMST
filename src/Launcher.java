@@ -1,5 +1,4 @@
 import javax.swing.SwingUtilities;
-
 import view.BienvenidaApp;
 
 public class Launcher {

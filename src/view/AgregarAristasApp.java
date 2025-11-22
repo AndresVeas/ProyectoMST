@@ -1,12 +1,5 @@
 package view;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-import javax.swing.text.*;
-
-import model.GestorArchivo;
-import model.Graph;
-
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -14,6 +7,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.util.regex.Pattern;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.*;
+import model.GestorArchivo;
+import model.Graph;
 
 public class AgregarAristasApp extends JFrame {
 
@@ -238,6 +236,28 @@ public class AgregarAristasApp extends JFrame {
             }
             GestorArchivo.insertarGrafo(graph);
 
+            // guardar cambios para que los algoritmos (y la pantalla principal) vean el nuevo grafo
+            try {
+                GestorArchivo.guardarCambios();
+            } catch (Exception ex) {
+                System.err.println("Error guardando cambios: " + ex.getMessage());
+            }
+
+            // Verificación rápida: cargar lista de grafos y mostrar info del último guardado
+            try {
+                var grafos = GestorArchivo.getGrafos();
+                if (grafos == null || grafos.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Advertencia: lista de grafos vacía después de guardar.", "Verificación", JOptionPane.WARNING_MESSAGE);
+                } else {
+                    model.Graph last = grafos.get(grafos.size() - 1);
+                    int vCount = last.getNumNodos();
+                    int eCount = (last.getEdges() == null) ? 0 : last.getEdges().size();
+                    JOptionPane.showMessageDialog(this, "Grafo guardado: vértices=" + vCount + " aristas=" + eCount, "Verificación", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception ex) {
+                System.err.println("Error verificando grafos: " + ex.getMessage());
+            }
+            
             // Volver a la ventana principal
             GraphInterface principal = new GraphInterface();
             principal.setLocationRelativeTo(null);

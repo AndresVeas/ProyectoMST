@@ -1,18 +1,16 @@
 package view;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
-
-import model.GestorArchivo;
-import model.Methods;
-
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import model.GestorArchivo;
+import model.Methods;
 
 public class GraphInterface extends JFrame {
 
@@ -536,8 +534,11 @@ public class GraphInterface extends JFrame {
             result = methods.kruskal(g);
         } else if ("Prim".equals(selectedAlgorithm)) {
             result = methods.prim(g);
+        } else if ("DFS".equals(selectedAlgorithm)) {
+            // usar vértice 0 como inicio por defecto (puede cambiarse posteriormente si desea pedir al usuario)
+            result = methods.dfs(g, 0);
         } else {
-            // otros métodos (DFS, Comparar) no están implementados en Methods; limpiar
+            // otros métodos no esperados
             pathTextArea.setText("Método no implementado");
             timeValueLabel.setText("0 ns");
             weightValueLabel.setText("0");
@@ -624,6 +625,10 @@ public class GraphInterface extends JFrame {
             long s = System.nanoTime();
             res1 = methods.prim(g);
             t1 = System.nanoTime() - s;
+        } else if ("DFS".equals(m1)) {
+            long s = System.nanoTime();
+            res1 = methods.dfs(g, 0); // inicio por defecto = 0
+            t1 = System.nanoTime() - s;
         } else {
             impl1 = false;
         }
@@ -636,6 +641,10 @@ public class GraphInterface extends JFrame {
         } else if ("Prim".equals(m2)) {
             long s = System.nanoTime();
             res2 = methods.prim(g);
+            t2 = System.nanoTime() - s;
+        } else if ("DFS".equals(m2)) {
+            long s = System.nanoTime();
+            res2 = methods.dfs(g, 0); // inicio por defecto = 0
             t2 = System.nanoTime() - s;
         } else {
             impl2 = false;
