@@ -883,12 +883,12 @@ public class GraphInterface extends JFrame {
             // Crear aristas a partir de la matriz de adyacencia (ahora dirigido: mat[i][j] representa i->j)
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
-                    if (i == j) continue;
-                    int peso = 0;
-                    if (i < mat.length && j < mat[i].length) peso = mat[i][j];
-                    if (peso > 0) {
+                     int peso = 0;
+                     if (i < mat.length && j < mat[i].length) peso = mat[i][j];
+                     if (peso > 0) {
+                        // permitir lazos (i == j) y aristas normales
                         edges.add(new Edge(nodes.get(i), nodes.get(j), peso, i, j));
-                    }
+                     }
                 }
             }
 
@@ -912,7 +912,7 @@ public class GraphInterface extends JFrame {
                 return;
             }
 
-            // Dibujar aristas (con flechas al final indicando dirección)
+            // Dibujar aristas (con flechas al final indicando dirección) y etiquetas de peso
             int nodeDiameter = 40;
             for (var edge : edges) {
                 int x1 = edge.n1.x;
@@ -925,85 +925,154 @@ public class GraphInterface extends JFrame {
                 g2.setStroke(new BasicStroke(isHighlighted ? 4f : 2f));
                 g2.setColor(isHighlighted ? Color.ORANGE : new Color(255, 255, 255, 160));
 
-                // ajustar líneas para que no entren al centro de los nodos (iniciar/terminar en el borde del círculo)
-                double angle = Math.atan2(y2 - y1, x2 - x1);
-                double sx = x1 + Math.cos(angle) * (nodeDiameter / 2.0);
-                double sy = y1 + Math.sin(angle) * (nodeDiameter / 2.0);
-                double ex = x2 - Math.cos(angle) * (nodeDiameter / 2.0);
-                double ey = y2 - Math.sin(angle) * (nodeDiameter / 2.0);
+                // Variables para la posición de la etiqueta de peso (se calculan según tipo de arista)
+                double tx, ty;
 
-                g2.drawLine((int) sx, (int) sy, (int) ex, (int) ey);
+                if (edge.i == edge.j) {
+                    // LAZO SUPERIOR: Curva que sale y entra por el lado izquierdo/superior y derecho/superior
+                    int nx = x1;
+                    int ny = y1;
+                    double r2 = nodeDiameter / 2.0;
 
-                // Dibujar flecha en (ex,ey) apuntando hacia (x2,y2)
-                double arrowLen = 12;
-                double arrowWid = 8;
-                double vx = Math.cos(angle);
-                double vy = Math.sin(angle);
-                double ox = -vy;
-                double oy = vx;
-                double ax = ex;
-                double ay = ey;
-                double x2p = ax - vx * arrowLen + ox * (arrowWid / 2.0);
-                double y2p = ay - vy * arrowLen + oy * (arrowWid / 2.0);
-                double x3p = ax - vx * arrowLen - ox * (arrowWid / 2.0);
-                double y3p = ay - vy * arrowLen - oy * (arrowWid / 2.0);
+                    // Puntos de inicio y fin en la parte superior del nodo
+                    // Inicio (Superior-Izquierdo, aprox 20 grados)
+                    double angleStart = Math.toRadians(200);
+                    double sx = nx + r2 * Math.cos(angleStart);
+                    double sy = ny + r2 * Math.sin(angleStart);
 
-                int[] xs = {(int) Math.round(ax), (int) Math.round(x2p), (int) Math.round(x3p)};
-                int[] ys = {(int) Math.round(ay), (int) Math.round(y2p), (int) Math.round(y3p)};
-                g2.fillPolygon(xs, ys, 3);
-            }
+                    // Fin (Superior-Derecho, aprox 340 grados)
+                    double angleEnd = Math.toRadians(340);
+                    double ex = nx + r2 * Math.cos(angleEnd);
+                    double ey = ny + r2 * Math.sin(angleEnd);
 
-            // Etiquetas de peso
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
-            for (var edge : edges) {
-                int x1 = edge.n1.x;
-                int y1 = edge.n1.y;
-                int x2 = edge.n2.x;
-                int y2 = edge.n2.y;
-                String wstr = String.valueOf(edge.w);
+                    // Distancia vertical que se extiende el lazo por encima del nodo (arco)
+                    double loopHeight = Math.max(50, nodeDiameter * 1.8);
 
-                double mx = (x1 + x2) / 2.0;
-                double my = (y1 + y2) / 2.0;
+                    // Puntos de control para la curva cúbica
+                    // C1: Extendido verticalmente hacia arriba desde el punto de inicio
+                    double c1x = sx;
+                    double c1y = sy - loopHeight;
 
-                double dx = x2 - x1;
-                double dy = y2 - y1;
-                double len = Math.max(1.0, Math.hypot(dx, dy));
-                double nx = -dy / len;
-                double ny = dx / len;
-                double offset = 12;
-                double tx = mx + nx * offset;
-                double ty = my + ny * offset;
+                    // C2: Extendido verticalmente hacia arriba desde el punto final
+                    double c2x = ex;
+                    double c2y = ey - loopHeight;
 
+                    // Dibujar la curva
+                    g2.draw(new java.awt.geom.CubicCurve2D.Double(sx, sy, c1x, c1y, c2x, c2y, ex, ey));
+
+                    // --- Dibujar flecha en el punto de entrada (ex, ey) ---
+                    double ax = ex;
+                    double ay = ey;
+
+                    // Para la flecha, usaremos la TANGENTE al punto de entrada.
+                    // La dirección de la flecha debe apuntar *hacia la curva* (hacia el centro de la curva),
+                    // no radialmente al centro del nodo.
+                    
+                    // Vector entre C2 y el punto de fin (ex, ey)
+                    // Este es el vector de dirección de la curva en el punto final.
+                    double dxCurve = ax - c2x;
+                    double dyCurve = ay - c2y;
+                    double dlen = Math.max(0.0001, Math.hypot(dxCurve, dyCurve));
+
+                    // Vector unitario en la dirección de la curva (hacia el nodo)
+                    double udx = dxCurve / dlen;
+                    double udy = dyCurve / dlen;
+
+                    // Dimensiones de la flecha
+                    double aLen = 12.0;
+                    double aHalf = 6.0;
+
+                    // Base de la flecha (detrás de la punta)
+                    // Usamos la dirección unitaria de la curva
+                    double bx1 = ax - udx * aLen;
+                    double by1 = ay - udy * aLen;
+
+                    // Perpendicular para las alas (vector normal a la curva)
+                    double px = -udy;
+                    double py = udx;
+
+                    int[] axs = {(int) Math.round(ax), (int) Math.round(bx1 + px * aHalf), (int) Math.round(bx1 - px * aHalf)};
+                    int[] ays = {(int) Math.round(ay), (int) Math.round(by1 + py * aHalf), (int) Math.round(by1 - py * aHalf)};
+                    g2.fillPolygon(axs, ays, 3);
+
+
+                    // colocar etiqueta en el pico superior del lazo
+                    tx = nx; // centro horizontal
+                    ty = ny - loopHeight - 16; // por encima del pico
+                    
+                } else {
+                    // arista normal: línea entre nodos (recortada en los bordes de los nodos) y flecha en el extremo
+                    double angle = Math.atan2(y2 - y1, x2 - x1);
+                    double sx = x1 + Math.cos(angle) * (nodeDiameter / 2.0);
+                    double sy = y1 + Math.sin(angle) * (nodeDiameter / 2.0);
+                    double ex = x2 - Math.cos(angle) * (nodeDiameter / 2.0);
+                    double ey = y2 - Math.sin(angle) * (nodeDiameter / 2.0);
+
+                    g2.drawLine((int) sx, (int) sy, (int) ex, (int) ey);
+
+                    // Dibujar flecha en (ex,ey) apuntando hacia (x2,y2)
+                    double arrowLen = 12;
+                    double arrowWid = 8;
+                    double vx = Math.cos(angle);
+                    double vy = Math.sin(angle);
+                    double ox = -vy;
+                    double oy = vx;
+                    double ax2 = ex;
+                    double ay2 = ey;
+                    double x2p = ax2 - vx * arrowLen + ox * (arrowWid / 2.0);
+                    double y2p = ay2 - vy * arrowLen + oy * (arrowWid / 2.0);
+                    double x3p = ax2 - vx * arrowLen - ox * (arrowWid / 2.0);
+                    double y3p = ay2 - vy * arrowLen - oy * (arrowWid / 2.0);
+
+                    int[] xs = {(int) Math.round(ax2), (int) Math.round(x2p), (int) Math.round(x3p)};
+                    int[] ys = {(int) Math.round(ay2), (int) Math.round(y2p), (int) Math.round(y3p)};
+                    g2.fillPolygon(xs, ys, 3);
+
+                    // calcular etiqueta en el offset lateral habitual
+                    double mx = (x1 + x2) / 2.0;
+                    double my = (y1 + y2) / 2.0;
+                    double dx = x2 - x1;
+                    double dy = y2 - y1;
+                    double len = Math.max(1.0, Math.hypot(dx, dy));
+                    double nx_ = -dy / len;
+                    double ny_ = dx / len;
+                    double offset = 12;
+                    tx = mx + nx_ * offset;
+                    ty = my + ny_ * offset;
+                }
+
+                // Dibujar etiqueta de peso (siempre centrada en el medio de la arista)
+                g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                g2.setColor(TEXT_GRAY);
+                String weightText = String.valueOf(edge.w);
                 FontMetrics fm = g2.getFontMetrics();
-                int sw = fm.stringWidth(wstr);
-                int sh = fm.getHeight();
-                int pad = 6;
-                g2.setColor(new Color(255, 255, 255, 220));
-                g2.fillRoundRect((int)(tx - sw/2.0) - pad/2, (int)(ty - sh/2.0) - pad/2, sw + pad, sh + pad/2, 8, 8);
-                g2.setColor(TEXT_DARK);
-                g2.drawString(wstr, (int)(tx - sw/2.0), (int)(ty + fm.getAscent()/2.0) - 2);
+                double tw = fm.stringWidth(weightText);
+                double th = fm.getHeight();
+                g2.drawString(weightText, (int) (tx - tw / 2), (int) (ty + th / 4));
             }
 
             // Dibujar nodos
-            for (int idx = 0; idx < nodes.size(); idx++) {
-                var node = nodes.get(idx);
-                int r = nodeDiameter;
-                int x = node.x - r / 2;
-                int y = node.y - r / 2;
+            for (var node : nodes) {
+                int x = node.x;
+                int y = node.y;
+                boolean isHighlighted = highlightedNodeIdx.contains(nodes.indexOf(node));
 
-                boolean isNodeHighlighted = highlightedNodeIdx.contains(idx);
-
-                g2.setColor(isNodeHighlighted ? PRIMARY_BLUE : NODE_COLOR);
-                g2.fillOval(x, y, r, r);
+                g2.setColor(isHighlighted ? Color.ORANGE : NODE_COLOR);
+                g2.fillOval(x - nodeDiameter / 2, y - nodeDiameter / 2, nodeDiameter, nodeDiameter);
 
                 g2.setColor(Color.WHITE);
+                g2.setStroke(new BasicStroke(2));
+                g2.drawOval(x - nodeDiameter / 2, y - nodeDiameter / 2, nodeDiameter, nodeDiameter);
+
+                // Dibujar etiqueta de nodo (centrado)
+                g2.setColor(TEXT_DARK);
                 g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+                String nodeText = node.id;
                 FontMetrics fm = g2.getFontMetrics();
-                int textX = x + (r - fm.stringWidth(node.id)) / 2;
-                int textY = y + ((r - fm.getHeight()) / 2) + fm.getAscent();
-                g2.drawString(node.id, textX, textY);
+                int tw = fm.stringWidth(nodeText);
+                int th = fm.getHeight();
+                g2.drawString(nodeText, x - tw / 2, y + th / 4);
             }
         }
     }
-
 }

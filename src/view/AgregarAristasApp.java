@@ -171,47 +171,128 @@ public class AgregarAristasApp extends JFrame {
         GraphButton btnVerGrafo = new GraphButton("Ver Grafo");
         btnVerGrafo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
         btnVerGrafo.addActionListener(e -> {
-            // Recolectar los valores (origen,destino,peso) de cada fila
+            // Validación temprana: asegurar que exista listado de vértices
+            if (listadoVertices == null || listadoVertices.length == 0) {
+                JOptionPane.showMessageDialog(this, "No hay vértices registrados. Vuelva a la pantalla anterior.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            int n = listadoVertices.length;
+
+            // Recolectar y validar los valores (origen,destino,peso) de cada fila
             java.util.List<String> filas = new java.util.ArrayList<>();
             Component[] rows = edgesContainer.getComponents();
+            boolean hasInvalid = false;
+
             for (Component comp : rows) {
                 if (!(comp instanceof JPanel)) continue;
                 JPanel row = (JPanel) comp;
                 if (row.getComponentCount() <= 1 || !(row.getComponent(1) instanceof JPanel)) continue;
                 JPanel fieldsPanel = (JPanel) row.getComponent(1);
 
-                String origen = "";
-                String destino = "";
-                String peso = "";
+                RoundedNumberField fOrigen = null, fDestino = null, fPeso = null;
                 int found = 0;
                 for (Component c : fieldsPanel.getComponents()) {
                     if (c instanceof RoundedNumberField) {
                         RoundedNumberField f = (RoundedNumberField) c;
-                        String txt = f.isShowingPlaceholder() ? "" : f.getText().trim();
-                        if (found == 0) origen = txt;
-                        else if (found == 1) destino = txt;
-                        else if (found == 2) peso = txt;
+                        if (found == 0) fOrigen = f;
+                        else if (found == 1) fDestino = f;
+                        else if (found == 2) fPeso = f;
                         found++;
                         if (found >= 3) break;
                     }
                 }
-                // Solo aceptar filas con los 3 valores válidos (no vacíos)
-                if (!origen.isEmpty() && !destino.isEmpty() && !peso.isEmpty()) {
-                    filas.add(origen + "," + destino + "," + peso);
+
+                // resetear estados visuales previos
+                if (fOrigen != null) { fOrigen.setError(false); fOrigen.repaint(); }
+                if (fDestino != null) { fDestino.setError(false); fDestino.repaint(); }
+                if (fPeso != null) { fPeso.setError(false); fPeso.repaint(); }
+
+                String origenTxt = (fOrigen == null || fOrigen.isShowingPlaceholder()) ? "" : fOrigen.getText().trim();
+                String destinoTxt = (fDestino == null || fDestino.isShowingPlaceholder()) ? "" : fDestino.getText().trim();
+                String pesoTxt = (fPeso == null || fPeso.isShowingPlaceholder()) ? "" : fPeso.getText().trim();
+
+                // Si todos vacíos, ignorar fila (permite filas en blanco)
+                if (origenTxt.isEmpty() && destinoTxt.isEmpty() && pesoTxt.isEmpty()) {
+                    continue;
+                }
+
+                boolean rowValid = true;
+
+                // validar origen
+                int s = -1, t = -1, w = 0;
+                if (origenTxt.isEmpty()) {
+                    if (fOrigen != null) fOrigen.setError(true);
+                    rowValid = false;
+                } else {
+                    try {
+                        s = Integer.parseInt(origenTxt);
+                        if (s < 1 || s > n) {
+                            if (fOrigen != null) fOrigen.setError(true);
+                            rowValid = false;
+                        }
+                    } catch (NumberFormatException ex) {
+                        if (fOrigen != null) fOrigen.setError(true);
+                        rowValid = false;
+                    }
+                }
+
+                // validar destino
+                if (destinoTxt.isEmpty()) {
+                    if (fDestino != null) fDestino.setError(true);
+                    rowValid = false;
+                } else {
+                    try {
+                        t = Integer.parseInt(destinoTxt);
+                        if (t < 1 || t > n) {
+                            if (fDestino != null) fDestino.setError(true);
+                            rowValid = false;
+                        }
+                    } catch (NumberFormatException ex) {
+                        if (fDestino != null) fDestino.setError(true);
+                        rowValid = false;
+                    }
+                }
+
+                // validar peso (debe ser numérico)
+                if (pesoTxt.isEmpty()) {
+                    if (fPeso != null) fPeso.setError(true);
+                    rowValid = false;
+                } else {
+                    try {
+                        w = Integer.parseInt(pesoTxt);
+                        // aceptar pesos >= 0; si desea >0, cambiar condición
+                        if (w < 0) {
+                            if (fPeso != null) fPeso.setError(true);
+                            rowValid = false;
+                        }
+                    } catch (NumberFormatException ex) {
+                        if (fPeso != null) fPeso.setError(true);
+                        rowValid = false;
+                    }
+                }
+
+                // repintar campos para mostrar borde rojo si corresponde
+                if (fOrigen != null) fOrigen.repaint();
+                if (fDestino != null) fDestino.repaint();
+                if (fPeso != null) fPeso.repaint();
+
+                if (!rowValid) {
+                    hasInvalid = true;
+                } else {
+                    filas.add(s + "," + t + "," + w);
                 }
             }
 
-            // Inicializar grafo con la lista de vértices recibida
-            if (listadoVertices == null || listadoVertices.length == 0) {
-                JOptionPane.showMessageDialog(this, "No hay vértices registrados. Vuelva a la pantalla anterior.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (hasInvalid) {
+                JOptionPane.showMessageDialog(this, "Corrija los campos marcados en rojo antes de continuar.", "Error de validación", JOptionPane.ERROR_MESSAGE);
+                return; // no avanzar hasta corregir
             }
+
+            // Construir el grafo con las filas ya validadas
             Graph graph = new Graph();
             graph.setListaVertices(listadoVertices);
-            int n = graph.getNumNodos();
             graph.setMatrizAd(new int[n][n]);
 
-            // Añadir aristas validando índices (se asume IDs numéricos 1..n)
             for (String fstr : filas) {
                 String[] parts = fstr.split(",");
                 if (parts.length < 3) continue;
@@ -219,46 +300,17 @@ public class AgregarAristasApp extends JFrame {
                     int s = Integer.parseInt(parts[0].trim());
                     int t = Integer.parseInt(parts[1].trim());
                     int w = Integer.parseInt(parts[2].trim());
-                    if (s < 1 || s > n || t < 1 || t > n) {
-                        System.err.println("Índice de vértice fuera de rango: " + fstr);
-                        continue;
-                    }
                     graph.addEdge(s, t, w);
                 } catch (NumberFormatException ex) {
-                    System.err.println("Valor no numérico en arista: " + fstr);
+                    // no debería ocurrir porque ya validamos
                 }
             }
 
-            if (filas.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No hay aristas válidas.", "Info", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, String.join("\n", filas), "Aristas recolectadas", JOptionPane.INFORMATION_MESSAGE);
-            }
+            // Insertar y guardar
             GestorArchivo.insertarGrafo(graph);
+            try { GestorArchivo.guardarCambios(); } catch (Exception ex) { System.err.println("Error guardando cambios: " + ex.getMessage()); }
 
-            // guardar cambios para que los algoritmos (y la pantalla principal) vean el nuevo grafo
-            try {
-                GestorArchivo.guardarCambios();
-            } catch (Exception ex) {
-                System.err.println("Error guardando cambios: " + ex.getMessage());
-            }
-
-            // Verificación rápida: cargar lista de grafos y mostrar info del último guardado
-            try {
-                var grafos = GestorArchivo.getGrafos();
-                if (grafos == null || grafos.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Advertencia: lista de grafos vacía después de guardar.", "Verificación", JOptionPane.WARNING_MESSAGE);
-                } else {
-                    model.Graph last = grafos.get(grafos.size() - 1);
-                    int vCount = last.getNumNodos();
-                    int eCount = (last.getEdges() == null) ? 0 : last.getEdges().size();
-                    JOptionPane.showMessageDialog(this, "Grafo guardado: vértices=" + vCount + " aristas=" + eCount, "Verificación", JOptionPane.INFORMATION_MESSAGE);
-                }
-            } catch (Exception ex) {
-                System.err.println("Error verificando grafos: " + ex.getMessage());
-            }
-            
-            // Volver a la ventana principal
+            // volver a la ventana principal
             GraphInterface principal = new GraphInterface();
             principal.setLocationRelativeTo(null);
             principal.setVisible(true);
@@ -281,7 +333,7 @@ public class AgregarAristasApp extends JFrame {
     private void cargarResumenNodosDummy(JPanel container) {
         int i = 0;
         for (String g : listadoVertices) {
-            JLabel itemLabel = new JLabel("•  " + (++i) + " ---->" + g);
+            JLabel itemLabel = new JLabel("•  " + (++i) + " »»»»»» " + g);
             itemLabel.setFont(FONT_RESUMEN_ITEM);
             itemLabel.setForeground(COLOR_TEXTO_TITULO);
             itemLabel.setBorder(new EmptyBorder(5, 0, 5, 0)); // Espacio entre items
@@ -375,6 +427,7 @@ public class AgregarAristasApp extends JFrame {
     static class RoundedNumberField extends JTextField implements FocusListener {
         private String placeholder;
         private boolean showingPlaceholder;
+        private boolean errorState = false; // nuevo: marca de error
 
         public RoundedNumberField(String placeholder) {
             this.placeholder = placeholder;
@@ -390,14 +443,16 @@ public class AgregarAristasApp extends JFrame {
 
         public boolean isShowingPlaceholder() { return showingPlaceholder; }
 
+        public void setError(boolean err) { this.errorState = err; }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(Color.WHITE);
             g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
-            g2.setColor(COLOR_INPUT_BORDER);
-            g2.setStroke(new BasicStroke(1f));
+            g2.setColor(errorState ? Color.RED : COLOR_INPUT_BORDER);
+            g2.setStroke(new BasicStroke(1.5f));
             g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
             g2.dispose();
             super.paintComponent(g);
@@ -409,6 +464,11 @@ public class AgregarAristasApp extends JFrame {
                 setText("");
                 setForeground(COLOR_TEXTO_TITULO);
                 showingPlaceholder = false;
+            }
+            // al enfocar quitar estado de error para facilitar corrección
+            if (errorState) {
+                setError(false);
+                repaint();
             }
         }
         @Override
