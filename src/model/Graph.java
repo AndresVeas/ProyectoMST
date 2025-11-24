@@ -18,6 +18,11 @@ public class Graph {
         this.label = label;
         this.matrizAd = matrizAd;
         this.listaVertices = listaVertices;
+        
+        // AGREGA ESTO PARA QUE LOS ALGORITMOS RECONOZCAN EL TAMAÑO AL INSTANTE
+        if (listaVertices != null) {
+            this.numNodos = listaVertices.length;
+        }
     }
     
     public void addEdge(int start, int end, int weight) {
